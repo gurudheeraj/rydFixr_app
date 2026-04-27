@@ -1,0 +1,40 @@
+{
+    "name": "fixpert-backend",
+    "version": "1.0.0",
+    "description": "Backend API for Fixpert portal - handles Fixpert registration, OTP verification, login, and email communication.",
+    "main": "fixpert-server.js",
+    "scripts": {
+        "start": "node fixpert-server.js",
+        "dev": "nodemon fixpert-server.js"
+    },
+    "keywords": [
+        "fixpert",
+        "mechanic",
+        "otp",
+        "ridefixr",
+        "backend",
+        "express",
+        "mongoose"
+    ],
+    "author": "Your Name",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^1.15.0",
+        "bcrypt": "^6.0.0",
+        "bcryptjs": "^3.0.2",
+        "body-parser": "^2.2.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.5.0",
+        "express": "^4.21.2",
+        "haversine": "^1.1.1",
+        "haversine-distance": "^1.2.3",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^7.8.7",
+        "nodemailer": "^8.0.4",
+        "socket.io": "^4.8.1",
+        "ws": "^8.18.2"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.10"
+    }
+}

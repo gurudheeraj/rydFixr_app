@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #F4FAFF;
+      color: #333;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #0f52ba;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      flex: 1;
+    }
+
+    nav {
+      display: flex;
+      gap: 1.2rem;
+      align-items: center;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .menu-toggle {
+      display: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    .signout-btn {
+      background: white;
+      color: #0f52ba;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      height: calc(100% - 70px);
+    }
+
+    .left-half, .right-half {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5% 1% 1.5% 2%;
+      gap: 3%;
+    }
+
+    .left-half .section,
+    .right-half .section {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 2px rgba(0,0,0,0.05);
+      padding: 1rem;
+    }
+
+    .right-half {
+      background-color: #f4faff;
+      padding: 1.5% 2% 1.5% 1%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .section-header {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #0f52ba;
+      align-self: flex-start;
+      padding-left: 10%;
+    }
+    .section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;  /* 🔥 center horizontally */
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 25px;
+      background: #f9f9f9;
+
+      padding: 14px 18px;   /* 🔥 instead of padding-left */
+      max-width: 600px;
+      width: 100%;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .input-wrapper i {
+      position: static;   /* 🔥 remove absolute */
+      color: #0f52ba;
+      font-size: 1.2rem;
+    }
+
+    .input-wrapper input {
+      border: none;
+      outline: none;
+      font-size: 15px;
+      line-height: 1.4;
+      flex: 1;              /* 🔥 better than width:100% */
+      background: transparent;
+    }
+    .input-wrapper:focus-within {
+      border-color: #0f52ba;
+      box-shadow: 0 0 6px rgba(15,82,186,0.2);
+    }
+    #fixpertFields {
+      width: 80%;
+    }
+    .suggestions-box {
+      position: absolute;
+      top: 45px;
+      left: 0;
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .suggestion-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;  
+    }
+
+    .suggestion-item:hover {
+      background: #f5f5f5;
+    }
+
+    .book-btn {
+      background: linear-gradient(135deg, #0f52ba, #3f8efc);
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(15, 82, 186, 0.3);
+      height: 60px;
+      width: 80%;
+    }
+
+    .book-btn:hover {
+      background: linear-gradient(135deg, #0d47a1, #2b72d6);
+      box-shadow: 0 6px 15px rgba(15, 82, 186, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .right-half .section-header {
+      padding-left: 10%;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .left-half, .right-half {
+        width: 100%;
+      }
+
+      .input-wrapper, .book-btn {
+        width: 90% !important;
+      }
+      nav { display: none; flex-direction: column; width: 100%; margin-top: 1rem; }
+      nav.show { display: flex; }
+      .menu-toggle { display: block; }
+    }
+    .map-container {
+      width: 100%;
+      height: 500px !important;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #liveMap {
+      width: 100%;
+      height: 500px !important;
+    }
+
+    #currentLocationBtn {
+      position: absolute;
+      bottom: 80px;
+      right: 10px;
+      z-index: 1000;
+
+      width: 50px;
+      height: 50px;
+      border: none;
+      border-radius: 50%;
+
+      background: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+
+      cursor: pointer;
+    }
+
+    #currentLocationBtn img {
+      width: 60%;
+      height: 60%;
+    }
+
+    #accuracyOverlay {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      
+      background: rgba(0, 0, 0, 0.7); /* 70% transparency */
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      
+      font-size: 14px;
+      z-index: 1000;
+      
+      display: none; /* hidden by default */
+    }
+
+    .service-card {
+      flex: 1;
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    /* 🔥 HOVER EFFECT */
+    .service-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 10px 25px rgba(15, 82, 186, 0.3);
+    }
+
+    /* 🔥 CLICK ACTIVE STATE */
+    .service-card.active {
+      border: 2px solid #0f52ba;
+      background: #e3f2fd;
+    }
+    #serviceSection {
+      align-items: center;
+    }
+
+    .issue-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+      width: 100%;
+    }
+
+    .issue-item {
+      padding: 8px 14px;
+      background: #f1f1f1;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: 0.2s;
+    }
+
+    .issue-item:hover {
+      background: #e0e0e0;
+    }
+
+    .issue-item.active {
+      background: #0f52ba;
+      color: white;
+    }
+
+
+    footer {
+      background: #ffffff;
+      border-radius: 12px;
+      color: #7F7F7F;
+      text-align: center;
+      padding: 2rem;
+      margin: 16px 0px;
+      font-family:sans-serif,Noto Sans,Noto Sans CJK;
+      font: 26px;
+    }
+
+    .dot-loader {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot-loader span {
+      width: 14px;
+      height: 14px;
+      background: #0f52ba;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+
+    .dot-loader span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot-loader span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.5);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+  </style>
+
+</head>
+<body>
+  <header>
+    <h1>Customer Dashboard</h1>
+    <div class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
+    <nav id="navbar">
+      <a href="#profile" id="profilePanelLink">Profile</a>
+      <a href="#support">Help & Support</a>
+      <a href="#servicings">My Servicings</a>
+      <a href="#reschedules">Reschedules</a>
+      <button class="signout-btn" onclick="signOut()">Sign Out</button>
+    </nav>
+    
+  </header>
+
+  <div class="container">
+    <!-- LEFT SIDE -->
+    <div class="left-half">
+      <div class="section">
+        <div class="section-header">Your Location</div>
+        <div class="input-wrapper" style="position: relative;">
+          <i class="fas fa-map-marker-alt"></i>
+          <input type="text" id="sourceLocation" placeholder="Detecting your location..."readonly onclick="enableManualInput()" oninput="handleLocationSearch(this.value)"/>
+          <div id="locationSuggestions" class="suggestions-box"></div>
+        </div>
+      </div>
+
+      <div class="section" id="serviceSelection">
+
+        <div style="display:flex; gap:15px; width:80%;">
+
+          <!-- FIXPERT CARD -->
+          <div id="fixpertCard" class="service-card" onclick="selectService('fixpert')" style="
+            flex:1;
+            background:#f5f5f5;
+            padding:15px;
+            border-radius:12px;
+            cursor:pointer;
+          ">
+            <i class="fas fa-tools" style="font-size:24px;color:#0f52ba;"></i>
+            <h3>Fixpert</h3>
+            <p style="color:#666;font-size:14px;">Bike repair at your location</p>
+          </div>
+
+          <!-- FUEL CARD -->
+          <div id="fuelCard" class="service-card" onclick="selectService('fuel')" style="
+            flex:1;
+            background:#f5f5f5;
+            padding:15px;
+            border-radius:12px;
+            cursor:pointer;
+          ">
+            <i class="fas fa-gas-pump" style="font-size:24px;color:#ff9800;"></i>
+            <h3>Fuel Delivery</h3>
+            <p style="color:#666;font-size:14px;">Petrol/Diesel delivered faster</p>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="section" id="serviceSection" style="display:none; flex-direction:column;">
+
+        <button onclick="goBack()" class="back-btn" style="
+          align-self:flex-start;
+          margin-bottom:10px;
+          background:none;
+          border:none;
+          color:#0f52ba;
+          cursor:pointer;
+        ">← Back</button>
+        
+        <div id="fixpertFields">
+
+          <div class="section-header">Bike Issue</div>
+
+          <!-- 🔥 ISSUE LIST -->
+          <div id="issueList" class="issue-container">
+
+            <div class="issue-item" onclick="selectIssue(event, 'Flat Tyre')">Flat Tyre</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Battery Issue')">Battery Issue</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Engine Problem')">Engine Problem</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Brake Issue')">Brake Issue</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Chain Issue')">Chain Issue</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Clutch')">Clutch</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Oil Leakage')">Oil Leakage</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Overheating')">Overheating</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Starting Trouble')">Starting Trouble</div>
+            <div class="issue-item" onclick="selectIssue(event, 'Other')">Other</div>
+
+          </div>
+
+          <!-- 🔥 INPUT (HIDDEN INITIALLY) -->
+          <div class="input-wrapper" id="bikeIssueWrapper" style="display:none;">
+            <i class="fas fa-tools"></i>
+            <input type="text" id="bikeIssue" placeholder="Describe the issue..."/>
+          </div>
+        </div>
+
+        <button class="book-btn" id="actionBtn">Book Fixpert</button>
+
+      </div>
+
+      <footer>
+        &copy; 2026 rydFixr services. All rights reserved.
+      </footer>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right-half">
+      <div class="section">
+        <div class="section-header">Map Section</div>
+        <div class="map-container" style="position: relative;">
+          <div id="accuracyOverlay">📍 Your current location may be inaccurate (~<span id="accuracyValue"></span>).Please adjust the pin for better accuracy.</div>
+          <div id="liveMap"></div>
+          <button id="currentLocationBtn" onclick="useCurrentLocation()"><img src="../images/mapCL.png"alt="locate"></button>
+        </div>
+      </div>
+    </div>
+    <div id="profilePanel" style="position: fixed;
+      top: 10;
+      right: 0;
+      width: 60%;
+      max-width: 500px;
+      height: 30%;
+      background: white;
+      box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      z-index: 1000;
+      padding: 1rem;
+      overflow-y: auto;">
+      <button onclick="toggleProfile()"></button>
+      <h2 style="margin-bottom: 1rem;">Customer Profile</h2>
+      <div id="profileDetails" style="line-height: 1.8;"></div>
+    </div>
+  </div>
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script> 
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+
+  <script>
+    // Profile Section
+    document.querySelector('#profilePanelLink').addEventListener('click', toggleProfile);
+    async function loadProfile() {
+      try {
+        const res = await fetch("http://localhost:5000/api/customers/profile", {
+          headers: {
+            "Authorization": "Bearer " + localStorage.getItem("customerToken")
+          }
+        });
+
+        const data = await res.json();
+        console.log("PROFILE:", data);
+
+        if (res.ok) {
+          localStorage.setItem("customerName", data.name);
+          localStorage.setItem("customerPhone", data.phone);
+          localStorage.setItem("customerEmail", data.email);
+        }
+
+      } catch (err) {
+        console.error("Profile fetch error:", err);
+      }
+    }
+
+    async function openProfile(e) {
+      if(e) e.preventDefault();
+      await loadProfile();
+      const panel = document.getElementById('profilePanel');
+      const profileDiv = document.getElementById('profileDetails');
+
+      const name = localStorage.getItem('customerName') || "Not Available";
+      const phone = localStorage.getItem('customerPhone') || "Not Available";
+      const email = localStorage.getItem('customerEmail') || "Not Available";
+
+      profileDiv.innerHTML = `
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Phone:</strong> ${phone}</p>
+        <p><strong>Email:</strong> ${email}</p>
+      `;
+      panel.style.transform = "translateX(0%)";
+    }
+    function toggleProfile(e) {
+      if (e) e.preventDefault();
+
+      const panel = document.getElementById('profilePanel');
+
+      const isOpen = panel.style.transform === "translateX(0%)";
+
+      if (isOpen) {
+    // ✅ CLOSE PANEL
+        panel.style.transform = "translateX(100%)";
+      } else {
+        // ✅ OPEN PANEL
+        openProfile(); // DON'T pass e
+      }
+    }
+    function toggleMenu() {
+      document.getElementById('navbar').classList.toggle('show');
+    }
+
+    if (!localStorage.getItem('customerLoggedIn')) {
+      window.location.href = 'login.html';
+    }
+
+    let selectedService = "fixpert";
+
+    function selectService(type) {
+    selectedService = type;
+
+    const fixpertCard = document.getElementById("fixpertCard");
+    const fuelCard = document.getElementById("fuelCard");
+
+    const fixpertFields = document.getElementById("fixpertFields");
+    const actionBtn = document.getElementById("actionBtn");
+
+    // reset active
+    fixpertCard.classList.remove("active");
+    fuelCard.classList.remove("active");
+
+    // hide cards, show section
+    document.getElementById("serviceSelection").style.display = "none";
+    document.getElementById("serviceSection").style.display = "flex";
+
+    if (type === "fixpert") {
+      fixpertCard.classList.add("active");
+
+      fixpertFields.style.display = "block";   // ✅ show all fixpert UI
+      actionBtn.innerText = "Book Fixpert";
+
+    } else {
+      fuelCard.classList.add("active");
+
+      fixpertFields.style.display = "none";    // 🔥 hide everything
+      actionBtn.innerText = "Book Fuel";
+    }
+  }
+    function goBack() {
+      document.getElementById("bikeIssueWrapper").style.display = "none";
+      document.querySelectorAll(".issue-item").forEach(i => i.classList.remove("active"));
+      document.getElementById("serviceSelection").style.display = "flex";
+      document.getElementById("serviceSection").style.display = "none";
+      
+    }
+
+    let selectedIssue = "";
+
+    function selectIssue(event,issue) {
+      selectedIssue = issue;
+
+      const items = document.querySelectorAll(".issue-item");
+      items.forEach(i => i.classList.remove("active"));
+
+      event.target.classList.add("active");
+
+      const inputBox = document.getElementById("bikeIssueWrapper");
+      const inputField = document.getElementById("bikeIssue");
+
+      if (issue === "Other") {
+        inputBox.style.display = "flex";
+        inputField.value = "";
+        inputField.focus();
+      } else {
+        inputBox.style.display = "none";
+        inputField.value = issue;
+      }
+    }
+
+    const socket = io("http://localhost:5001"); // Point to fixpert-server
+    const customerEmail = localStorage.getItem("customerEmail");
+    if (customerEmail) {
+      socket.emit("register-customer", customerEmail);
+    }
+
+    /*
+    socket.on("fixpert-accepted", (data) => {
+      console.log("🔥 FIXPERT ACCEPTED:", data);
+
+      console.log("🔥 DISTANCE FROM SERVER:", data.distance); // debug
+
+      socket.emit("request-accepted", {
+        customerEmail: localStorage.getItem("customerEmail"),
+        fixpertInfo: {
+          name: data.name,
+          phone: data.phone,
+          mechanicId: data.mechanicId,
+          location: data.location,
+          customerLocation: data.customerLocation,
+          distance: data.distance   // 🔥 IMPORTANT
+        }
+      });
+    }); */
+
+    let map, customerMarker//, fixpertMarker, rou;
+    let customerCoords = {};
+    const petrolIcon = L.icon({
+      iconUrl: '../images/petrol_bunk.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -35]
+    });
+
+    
+
+  // Auto-detect customer location
+    let mapInitialized = false;
+    let manualLocationSelected = false;
+    let searchTimeout;
+    let petrolLayer;
+    if (localStorage.getItem("rideCancelled") === "true") {
+      console.log("Reset after cancel");
+
+      localStorage.removeItem("fixpertRequest");
+      localStorage.removeItem("rideCancelled");
+
+      manualLocationSelected = false;
+    }
+
+    async function getAddress(lat, lng) {
+      try {
+        const res = await fetch(`https://corsproxy.io/?https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+        //https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}
+
+        const data = await res.json();
+
+        const address = data.address;
+
+        const fullAddress = 
+        `${address.road || ''},
+        ${address.suburb || ''},
+        ${address.city || address.town || address.village || ''},
+        ${address.state || ''} - ${address.postcode || ''}`;
+
+        return fullAddress;
+      } 
+      catch (err) {
+        console.error("Error fetching address:", err);
+        return "Location unavailable";
+      }
+    }
+
+    /*let poiLayer = L.layerGroup();
+
+    async function loadPOIs(lat, lng) {
+      poiLayer.clearLayers();
+
+      const query = `
+        [out:json];
+        (
+          node["amenity"="hospital"](around:3000, ${lat}, ${lng});
+          node["amenity"="bank"](around:3000, ${lat}, ${lng});
+          node["amenity"="fuel"](around:3000, ${lat}, ${lng});
+          node["amenity"="restaurant"](around:3000, ${lat}, ${lng});
+          node["shop"](around:3000, ${lat}, ${lng});
+        );
+        out;
+      `;
+
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query
+      });
+
+      const data = await res.json();
+
+      data.elements.forEach(el => {
+        if (el.lat && el.lon) {
+          L.marker([el.lat, el.lon])
+            .bindPopup(el.tags.name || "Unknown")
+            .addTo(poiLayer);
+        }
+      });
+
+      poiLayer.addTo(map);
+    }
+      */
+
+    navigator.geolocation.watchPosition((position) => {
+      if (manualLocationSelected) return;
+
+      const accuracy=position.coords.accuracy
+      console.log("Accuracy: ",accuracy);
+      const overlay = document.getElementById("accuracyOverlay");
+      const accuracyText = document.getElementById("accuracyValue");
+
+      if (accuracy > 100 && !manualLocationSelected) {
+        let displayAccuracy;
+
+        if (accuracy >= 1000) {
+          displayAccuracy = (accuracy / 1000).toFixed(2) + " km";
+        } else {
+          displayAccuracy = Math.round(accuracy) + " m";
+        }
+        accuracyText.innerText = displayAccuracy;
+        overlay.style.display = "block";
+      } else {
+        overlay.style.display = "none";
+      }
+
+      customerCoords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+        
+      };
+      // 🔥 KEEP STORAGE IN SYNC (AUTO GPS)
+      let requestData = JSON.parse(localStorage.getItem("fixpertRequest"));
+
+      if (requestData && !manualLocationSelected) {
+        requestData.latitude = customerCoords.lat;
+        requestData.longitude = customerCoords.lng;
+
+        localStorage.setItem("fixpertRequest", JSON.stringify(requestData));
+      }
+
+      /*if (!window.lastPOIFetch || Date.now() - window.lastPOIFetch > 30000) {
+        loadPOIs(customerCoords.lat, customerCoords.lng);
+        window.lastPOIFetch = Date.now();
+      }*/
+    
+      getAddress(customerCoords.lat, customerCoords.lng).then(address => {
+        document.getElementById("sourceLocation").value =
+        `${address} (${customerCoords.lat.toFixed(5)}, ${customerCoords.lng.toFixed(5)})`;
+      });
+      document.getElementById("sourceLocation").readOnly=true;
+      // 🔥 Initialize map ONLY ONCE
+      if (!mapInitialized) {
+        initMap()
+        mapInitialized = true;
+        loadPetrolBunks(customerCoords.lat, customerCoords.lng);
+        window.lastPetrolFetch = Date.now();
+      } else {
+          //customerMarker.setLatLng(customerCoords);
+          //map.panTo(customerCoords); // smoother than setView
+          if (customerMarker && map) {
+            customerMarker.setLatLng([customerCoords.lat, customerCoords.lng]);
+            map.panTo([customerCoords.lat, customerCoords.lng]);
+          }
+          map.on("moveend", () => {
+            if (!window.lastPetrolFetch || Date.now() - window.lastPetrolFetch > 120000) {
+              const center = map.getCenter();
+              loadPetrolBunks(center.lat, center.lng);
+              window.lastPetrolFetch = Date.now();
+            }
+          });
+      }
+      socket.emit('customer-location', customerCoords);
+    },
+    (error) => {
+      alert("Please enable location access!");
+      console.error(error);
+    },
+    { enableHighAccuracy: true,
+      timeout:10000,
+      maximumAge:60000
+     }
+  );
+//OSM version
+
+    function initMap() {
+      map = L.map('liveMap').setView([customerCoords.lat, customerCoords.lng], 15);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      customerMarker = L.marker([customerCoords.lat, customerCoords.lng], {
+        draggable: true
+      }).addTo(map).bindPopup("You are here");
+
+      customerMarker.on("dragend", function (e) {
+        const latlng = e.target.getLatLng();
+
+        customerCoords = {
+          lat: latlng.lat,
+          lng: latlng.lng
+        };
+        // 🔥 UPDATE STORAGE (CRITICAL FIX)
+        let requestData = JSON.parse(localStorage.getItem("fixpertRequest"));
+
+        if (requestData) {
+          requestData.latitude = customerCoords.lat;
+          requestData.longitude = customerCoords.lng;
+
+          localStorage.setItem("fixpertRequest", JSON.stringify(requestData));
+        }
+
+        manualLocationSelected = true;
+        document.getElementById("accuracyOverlay").style.display = "none";
+        updateLocationUI(customerCoords);
+      });
+      petrolLayer = L.layerGroup().addTo(map);
+
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
+    }
+      
+
+//maptiler version
+/*
+    function initMap() {
+      map = L.map('liveMap').setView([customerCoords.lat, customerCoords.lng], 18);
+
+      L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=W1IgEcuBAJ3IttOKvCpC', {
+        attribution: '&copy; MapTiler & OpenStreetMap',
+        tileSize: 512,
+        zoomOffset: -1
+      }).addTo(map);
+
+      customerMarker = L.marker([customerCoords.lat, customerCoords.lng], {
+        draggable: true
+      }).addTo(map).bindPopup("You are here");
+
+      customerMarker.on("dragend", function (e) {
+        const latlng = e.target.getLatLng();
+
+        customerCoords = {
+          lat: latlng.lat,
+          lng: latlng.lng
+        };
+
+        manualLocationSelected = true;
+        document.getElementById("accuracyOverlay").style.display = "none";
+        updateLocationUI(customerCoords);
+      });
+
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
+    }
+      */
+
+    // 👇 ADD HERE (BOTTOM OF FILE)
+
+    function selectLocation(lat, lng, address) {
+      lat = parseFloat(lat);
+      lng = parseFloat(lng);
+
+      customerCoords = { lat, lng };
+      // 🔥 UPDATE STORAGE HERE ALSO
+      let requestData = JSON.parse(localStorage.getItem("fixpertRequest"));
+
+      if (requestData) {
+        requestData.latitude = customerCoords.lat;
+        requestData.longitude = customerCoords.lng;
+
+        localStorage.setItem("fixpertRequest", JSON.stringify(requestData));
+      }
+      // ✅ Stop GPS
+      manualLocationSelected = true;
+
+      // ✅ Update input
+      document.getElementById("sourceLocation").value = address;
+
+      // ✅ Clear suggestions
+      document.getElementById("locationSuggestions").innerHTML = "";
+
+      // ✅ Move marker
+      if (!mapInitialized) {
+        initMap();
+        mapInitialized = true;
+      } else {
+        //customerMarker.setLatLng(customerCoords);
+        //map.setView(customerCoords, 15);
+        customerMarker.setLatLng([customerCoords.lat, customerCoords.lng]);
+        map.panTo([customerCoords.lat, customerCoords.lng]);
+      }
+
+      // ✅ Emit to backend
+      socket.emit('customer-location', customerCoords);
+    }
+    
+
+  // Listen when fixpert accepts request
+    /*socket.on('fixpert-accepted', ({ fixpertLocation }) => {
+      addFixpertMarker(fixpertLocation);
+      drawRoute(fixpertLocation);
+    }); */
+
+
+  // Track fixpert in real time
+    socket.on('fixpert-location-update', coords => {
+
+      const request = JSON.parse(localStorage.getItem("fixpertRequest"));
+
+      // ❌ IF NO ACTIVE BOOKING → IGNORE
+      if (!request) {
+        console.log("🚫 Ignoring fixpert location (no active request)");
+        return;
+      }
+
+      console.log("📡 FIXPERT LOCATION RECEIVED:", coords);
+
+      const lat =
+        coords.lat ||
+        coords.latitude ||
+        coords.location?.lat ||
+        coords.location?.latitude;
+
+      const lng =
+        coords.lng ||
+        coords.longitude ||
+        coords.location?.lng ||
+        coords.location?.longitude;
+
+      if (!lat || !lng) {
+        console.error("❌ Fixpert coords missing:", coords);
+        return;
+      }
+/*
+      if (fixpertMarker) {
+        fixpertMarker.setLatLng([lat, lng]);
+      } else {
+        addFixpertMarker({ lat, lng });
+      }
+        */
+
+      //drawRoute({ lat, lng });
+    });
+/*
+    function addFixpertMarker(coords) {
+      const lat = coords.lat || coords.latitude;
+      const lng = coords.lng || coords.longitude;
+      if (!lat || !lng) {
+        console.error("❌ Invalid fixpert marker coords:", coords);
+        return;
+      }
+
+      if (!fixpertMarker) {
+        fixpertMarker = L.circleMarker([lat, lng], {
+          radius: 6,
+          color: "#0f52ba"
+        }).addTo(map);
+      } else {
+        fixpertMarker.setLatLng([lat, lng]);
+      }
+    } */
+
+    function drawRoute(fixpertCoords) {
+      if (!fixpertCoords || !customerCoords) return;
+
+      const customerLat = customerCoords.lat;
+      const customerLng = customerCoords.lng;
+
+      // 🔥 HANDLE BOTH FORMATS
+      const fixpertLat =
+        fixpertCoords.lat ||
+        fixpertCoords.latitude ||
+        fixpertCoords.location?.lat ||        // 🔥 ADD
+        fixpertCoords.location?.latitude;
+
+      const fixpertLng =
+        fixpertCoords.lng ||
+        fixpertCoords.longitude ||
+        fixpertCoords.location?.lng ||        // 🔥 ADD
+        fixpertCoords.location?.longitude;
+
+      // ❌ STOP IF INVALID
+      if (!customerLat || !customerLng || !fixpertLat || !fixpertLng) {
+        console.error("❌ Invalid coordinates:", {
+          customerLat,
+          customerLng,
+          fixpertLat,
+          fixpertLng
+        });
+        return;
+      }
+
+      const points = [
+        [customerLat, customerLng],
+        [fixpertLat, fixpertLng]
+      ];
+
+      if (route) {
+        route.setLatLngs(points);
+      } else {
+        route = L.polyline(points, {
+          color: '#0f52ba',
+          weight: 5,
+          opacity: 0.8
+        }).addTo(map);
+      }
+
+      if (!window.isMapFitted) {
+        const bounds = L.latLngBounds(points);
+        map.fitBounds(bounds, { padding: [50, 50] });
+        window.isMapFitted = true;
+      }
+    }
+
+    /*
+    function bookFixpert() {
+      if (!customerCoords.lat || !customerCoords.lng) {
+        alert("Location not ready. Please wait...");
+        return;
+      }
+      localStorage.removeItem("fixpertRequest");
+      let issue;
+
+      if (selectedIssue === "Other") {
+        issue = document.getElementById("bikeIssue").value;
+
+        if (!issue) {
+          alert("Please describe your issue");
+          return;
+        }
+      } else {
+        issue = selectedIssue;
+
+        if (!issue) {
+          alert("Please select an issue");
+          return;
+        }
+      }
+
+      const requestData = {
+        name: localStorage.getItem("customerName"),
+        phone: localStorage.getItem("customerPhone"),
+        email: localStorage.getItem("customerEmail"),
+        issue,
+        location: {
+          lat: parseFloat(customerCoords.lat),
+          lng: parseFloat(customerCoords.lng)
+        }
+      };
+      localStorage.removeItem("assignedAt");
+      localStorage.removeItem("lockCompleted");
+      localStorage.removeItem("rideStatus");
+      localStorage.removeItem("rideOTP");
+
+      // 🔥 Save request
+      localStorage.setItem("fixpertRequest", JSON.stringify(requestData));
+
+      console.log("FINAL LOCATION SENT:", requestData.location);
+      // 🔥 Redirect to new page
+      showLoaderAndRedirect("searchingFixpert.html");
+    }*/
+
+    async function bookFixpert() {
+      
+      localStorage.removeItem("fixpertDetails");
+      localStorage.removeItem("rideOTP");
+      localStorage.removeItem("rideStatus");
+      localStorage.removeItem("assignedAt");
+      localStorage.removeItem("lockStarted");
+      localStorage.removeItem("lockCompleted");
+      sessionStorage.clear();
+      if (!customerCoords.lat || !customerCoords.lng) {
+        alert("Location not ready. Please wait...");
+        return;
+      }
+
+      let issue;
+
+      if (selectedIssue === "Other") {
+        issue = document.getElementById("bikeIssue").value;
+        if (!issue) {
+          alert("Please describe your issue");
+          return;
+        }
+      } else {
+        issue = selectedIssue;
+        if (!issue) {
+          alert("Please select an issue");
+          return;
+        }
+      }
+
+      const requestData = {
+        issue,
+        latitude: customerCoords.lat,
+        longitude: customerCoords.lng
+      };
+
+      console.log("🚀 Sending to backend:", requestData);
+
+      try {
+        const res = await fetch("http://localhost:5000/api/customers/send-request", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + localStorage.getItem("customerToken")
+          },
+          body: JSON.stringify({
+            issue,
+            latitude: customerCoords.lat,
+            longitude: customerCoords.lng
+          })
+        });
+
+        const data = await res.json();
+
+        console.log("✅ Booking response:", data);
+
+        if (res.ok) {
+          // optional: keep localStorage for UI
+          localStorage.setItem("fixpertRequest", JSON.stringify(requestData));
+
+          showLoaderAndRedirect("searchingFixpert.html");
+        } else {
+          alert(data.message || "Booking failed");
+        }
+
+      } catch (err) {
+        console.error("❌ Booking error:", err);
+        alert("Server error");
+      }
+    }
+
+    document.getElementById("actionBtn").addEventListener("click", () => {
+
+      if (selectedService === "fixpert") {
+        bookFixpert(); // ✅ reuse function
+
+      } else {
+        socket.emit("fuel-request", {
+          name: localStorage.getItem("customerName"),
+          phone: localStorage.getItem("customerPhone"),
+          location: {
+            lat: parseFloat(customerCoords.lat),
+            lng: parseFloat(customerCoords.lng)
+          }
+        });
+
+        alert("Fuel request sent! Waiting for delivery...");
+
+        if (petrolLayer) petrolLayer.clearLayers();
+      }
+
+    });
+
+    function showLoaderAndRedirect(url) {
+      document.getElementById("pageLoader").style.display = "flex";
+
+      setTimeout(() => {
+        window.location.href = url;
+      }, 1200); // 🔥 smooth delay
+    }
+
+    function signOut() {
+      localStorage.removeItem('customerLoggedIn');
+      window.location.href = 'login.html';
+    }
+
+    function useCurrentLocation() {
+      // ✅ Step 1: Re-enable GPS tracking
+      manualLocationSelected = false;
+
+      const btn = document.getElementById("currentLocationBtn");
+      const input = document.getElementById("sourceLocation");
+
+      // ✅ Step 2: Add loading UI
+      btn.classList.add("loading");
+      input.value = "📡 Fetching your current location...";
+
+      // ✅ Step 3: Optional smooth map recenter (if last coords exist)
+      if (customerCoords && map) {
+        map.setView([customerCoords.lat, customerCoords.lng], 15, {
+          animate: true,
+          duration: 1
+        });
+      }
+
+      // ✅ Step 4: Safety fallback (if GPS takes too long)
+      setTimeout(() => {
+        if (btn.classList.contains("loading")) {
+          btn.classList.remove("loading");
+          input.value ="⚠️ Taking longer than expected. Try again or move pin manually.";
+        }
+      }, 10000); // 10 seconds
+    }
+
+    function enableManualInput() {
+      manualLocationSelected = true; // 🔥 stop GPS
+      const input = document.getElementById("sourceLocation");
+      input.readOnly = false; // allow typing
+      input.focus();
+      input.value = ""; // clear auto text
+      input.placeholder = "Enter your location";
+    }
+
+    function handleLocationSearch(query) {
+  // 🔥 clear previous timer
+      clearTimeout(searchTimeout);
+
+      if (!query || query.length < 3) {
+        document.getElementById("locationSuggestions").innerHTML = "";
+        return;
+      }
+
+      // 🔍 show loading
+      document.getElementById("locationSuggestions").innerHTML =
+        "<div class='suggestion-item'>🔍 Searching...</div>";
+
+      // ⏳ debounce delay
+      searchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(
+            `https://corsproxy.io/?https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`
+          );
+
+          const data = await res.json();
+
+          showSuggestions(data);
+
+        } catch (err) {
+          console.error("Search error:", err);
+
+          document.getElementById("locationSuggestions").innerHTML =
+            "<div class='suggestion-item'>⚠️ Unable to fetch locations</div>";
+        }
+      }, 400); // 🔥 delay (can use 300–500ms)
+    }
+
+    function showSuggestions(places) {
+      const box = document.getElementById("locationSuggestions");
+      box.innerHTML = places
+        .map(place => `<div class="suggestion-item" 
+            onclick="selectLocation(${place.lat}, ${place.lon}, '${place.display_name}')">
+            ${place.display_name}
+          </div>`).join("");
+    }
+
+    function updateLocationUI(coords) {
+      const input = document.getElementById("sourceLocation");
+
+      input.value = "Fetching address...";
+
+      getAddress(coords.lat, coords.lng)
+        .then(address => {
+          if (address) {
+            input.value =
+              `${address} (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`;
+          } else {
+            input.value =
+              `Location not available (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`;
+          }
+        });
+
+      //map.panTo(coords);
+      map.panTo([coords.lat, coords.lng]);
+
+      socket.emit('customer-location', coords);
+    }
+
+    function getDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI/180;
+      const dLng = (lng2 - lng1) * Math.PI/180;
+
+      const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+        Math.sin(dLng/2) * Math.sin(dLng/2);
+
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+    
+
+    async function loadPetrolBunks(lat, lng) {
+      if (!petrolLayer) return;
+      petrolLayer.clearLayers();
+
+      const query = `
+        [out:json];
+        (
+          node["amenity"="fuel"](around:3000, ${lat}, ${lng});
+          way["amenity"="fuel"](around:3000, ${lat}, ${lng});
+        );
+        out center;
+      `;
+
+      try {
+        const res = await fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: "data=" + encodeURIComponent(query)
+        });
+
+        const data = await res.json();
+        console.log("Petrol bunks found:", data.elements.length);
+
+        let bunkList = [];
+
+        for (const el of data.elements) {
+
+          let plat, plon;
+
+          if (el.type === "node") {
+            plat = el.lat;
+            plon = el.lon;
+          } else if (el.type === "way" && el.center) {
+            plat = el.center.lat;
+            plon = el.center.lon;
+          }
+
+          if (plat && plon) {
+
+            // ✅ STEP 1: FAST FILTER (Haversine)
+            const roughDist = getDistance(
+              customerCoords.lat,
+              customerCoords.lng,
+              plat,
+              plon
+            );
+
+            if (roughDist <= 5) {  // 🔥 BUFFER
+              const realDist = roughDist;
+
+              if (realDist <= 3) {  // 🔥 FINAL DISTANCE
+
+                const key = plat.toFixed(5) + "," + plon.toFixed(5);
+
+                if (!bunkList.some(b => (b.lat.toFixed(5) + "," + b.lon.toFixed(5)) === key)) {
+                  bunkList.push({
+                    lat: plat,
+                    lon: plon,
+                    dist: realDist,   // 🔥 IMPORTANT CHANGE
+                    name: el.tags?.name || "Petrol Pump"
+                  });
+                }
+              }
+            }
+          }
+          // ⚡ LIMIT API CALLS (IMPORTANT)
+          if (bunkList.length >= 10) break;
+        }
+        bunkList.sort((a, b) => a.dist - b.dist);
+        console.log(bunkList)
+
+        const nearestBunks = bunkList.slice(0, 20);
+
+        nearestBunks.forEach(bunk => {
+          L.marker([bunk.lat, bunk.lon], {
+            icon: petrolIcon
+          })
+          .bindPopup(`
+            ⛽ <b>${bunk.name}</b><br>
+            📏 ${bunk.dist.toFixed(2)} km
+          `)
+          .addTo(petrolLayer);
+        });
+
+      } catch (err) {
+        console.error("Petrol bunk fetch error:", err);
+      }
+    }
+
+
+    loadProfile();
+  </script>
+
+  <div id="pageLoader" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+  ">
+
+    <div class="dot-loader">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+  </div>
+</body>
+</html>

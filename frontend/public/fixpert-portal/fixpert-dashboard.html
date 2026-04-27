@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Fixpert Dashboard</title>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<!-- Leaflet Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+
+
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f9f9f9;
+        color: #333;
+      }
+      header {
+        background-color: #10b981;
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      header h1 { flex: 1; }
+      nav {
+        display: flex;
+        gap: 1.2rem;
+        align-items: center;
+      }
+      nav a {
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .menu-toggle {
+        display: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        margin-left: auto;
+      }
+      .signout-btn {
+        background: white;
+        color: #10b981;
+        border: none;
+        border-radius: 6px;
+        padding: 0.4rem 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+      }
+  
+      .container {
+        display: flex;
+        height: calc(100vh - 70px);
+        padding: 1rem;
+        gap: 2%;
+      }
+      .left-half, .right-half {
+        width: 48%;
+      }
+      .right-half {
+        background-color: #eef9f3;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+  
+      .location-section,
+      .request-section {
+        background: #fff;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+  
+      .section-header {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: #10b981;
+      }
+  
+      .input-wrapper {
+        position: relative;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        padding-left: 3rem;
+        display: flex;
+        align-items: center;
+        height: 60px;
+        margin-bottom: 1rem;
+      }
+      .input-wrapper i {
+        position: absolute;
+        left: 1rem;
+        color: #10b981;
+        font-size: 1.25rem;
+      }
+      .input-wrapper input {
+        border: none;
+        outline: none;
+        font-size: 1.1rem;
+        width: 100%;
+        background: transparent;
+        padding-right: 1rem;
+      }
+  
+      .request-card {
+        background-color: #ecfdf5;
+        border-left: 5px solid #10b981;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      }
+  
+      .request-card h4 { margin-bottom: 0.25rem; color: #0f5132; }
+      .request-card p { margin-bottom: 0.5rem; font-size: 0.95rem; }
+  
+      .request-card button {
+        padding: 0.4rem 1rem;
+        border: none;
+        border-radius: 5px;
+        margin-right: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+  
+      .accept { background-color: #10b981; color: white; }
+      .decline { background-color: #dc3545; color: white; }
+  
+      #map {
+        height: 85%;
+        width: 100%;
+        border-radius: 8px;
+      }
+  
+      #profilePanel {
+        transition: transform 0.3s ease;
+        transform: translateX(100%);
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 50%;
+        height: 100%;
+        background: white;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      }
+  
+      #profilePanel.show {
+        transform: translateX(0);
+      }
+  
+  
+      #profilePanel button {
+        float: right;
+        background: #10b981;
+        color: #fff;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+      }
+  
+      @media (max-width: 768px) {
+        .container { flex-direction: column; }
+        .left-half, .right-half {
+          width: 100%;
+          margin-bottom: 1rem;
+        }
+        nav { display: none; flex-direction: column; width: 100%; margin-top: 1rem; }
+        nav.show { display: flex; }
+        .menu-toggle { display: block; }
+      }
+      footer {
+        background: white;
+        color: #7F7F7F;
+        text-align: center;
+        padding: 2rem;
+        margin: 16px 0px;
+        font-family:sans-serif,Noto Sans,Noto Sans CJK;
+        font: 26px;
+      }
+
+      .dot-loader {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot-loader span {
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+
+    .dot-loader span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot-loader span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.5);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+    </style>
+
+  </head>
+
+  <body>
+    <!-- Header and Navigation -->
+    <header>
+      <h1>Fixpert Dashboard</h1>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+      </div>
+      <nav id="navbar">
+        <a href="#profile" id="profilePanelLink">Profile</a>
+        <a href="#support">Help & Support</a>
+        <a href="#earnings">Earnings Tracker</a>
+        <a href="#schedules">Schedules</a>
+        <button class="signout-btn" onclick="logout()" id="signOutButton">Sign Out</button>
+      </nav>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="container">
+      <!-- Left Panel -->
+      <div class="left-half">
+        <div class="location-section">
+          <div class="input-wrapper">
+            <i class="fas fa-map-marker-alt"></i>
+            <input type="text" id="fixpertLocation" placeholder="Fixpert Location" readonly />
+          </div>
+          <div class="input-wrapper">
+            <i class="fas fa-dot-circle"></i>
+            <input type="text" id="customerLocation" placeholder="Customer Location" readonly />
+          </div>
+        </div>
+
+        <footer>
+          &copy; 2026 rydFixr services. All rights reserved.
+        </footer>
+      </div>
+
+      <!-- Right Panel -->
+      <div class="right-half">
+        <div class="section-header">Map Section</div>
+        <div id="fixpertMap" style="height: 550px; width: 100%;"></div>
+      </div>
+
+      <!-- Profile Panel -->
+      <div id="profilePanel" style="position: fixed; top: 70px; right: 0; width: 60%; max-width: 500px; height: 30%; background: white; box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2); transform: translateX(100%); transition: transform 0.3s ease-in-out; z-index: 1000; padding: 1rem; overflow-y: auto;">
+        <button onclick="toggleProfile()">Close</button>
+        <h2 style="margin-bottom: 1rem;">Fixpert Profile</h2>
+        <div id="profileDetails" style="line-height: 1.8;"></div>
+      </div>
+    </div>
+
+    <!-- Main Script -->
+     <script src="http://localhost:5001/socket.io/socket.io.js"></script>
+    <script>
+      // 🔐 AUTH CHECK
+      const socket = io("http://localhost:5001");
+      let fixpertCoords = {}; // ✅ GLOBAL
+      const token = localStorage.getItem("fixpertToken");
+      let requestQueue = [];
+      let currentRequest = null;
+      let timerInterval = null;
+
+      if (!token) {
+        alert("Please login first");
+        showLoaderAndRedirect("login.html");
+      }
+
+      window.logout = function() {
+        localStorage.removeItem("fixpertToken");
+        localStorage.removeItem('fixpertLoggedIn');
+        localStorage.removeItem('fixpertData');
+        showLoaderAndRedirect("login.html");
+      };
+
+      window.openProfile = function() {
+        const fixpert = JSON.parse(localStorage.getItem('fixpertData'));
+
+        const profileDiv = document.getElementById('profileDetails');
+
+        profileDiv.innerHTML = `
+          <p><strong>Fixpert-ID:</strong> ${fixpert?.mechanicId || 'N/A'}</p>
+          <p><strong>Email:</strong> ${fixpert?.email || 'N/A'}</p>
+          <p><strong>Name:</strong> ${fixpert?.name || 'N/A'}</p>
+          <p><strong>Phone:</strong> ${fixpert?.phone || 'N/A'}</p>
+        `;
+      };
+
+      window.toggleProfile = function(e) {
+        if(e) e.preventDefault();
+        console.log("click working!")
+        const panel = document.getElementById('profilePanel');
+        const isHidden = panel.style.transform === 'translateX(100%)';
+        panel.style.transform = isHidden 
+          ? 'translateX(0%)' 
+          : 'translateX(100%)';
+        if (isHidden) openProfile();
+      };
+      let currentCustomerCoords = null;
+
+      document.addEventListener('DOMContentLoaded', async () => {
+        localStorage.removeItem("activeRequest");
+        const fixpert = JSON.parse(localStorage.getItem('fixpertData'));
+        if (!fixpert) {
+          alert("Fixpert not logged in. Redirecting to login.");
+          return showLoaderAndRedirect('login.html');
+        }
+    
+        console.log("Fixpert Data from LocalStorage:", fixpert);
+    
+        let map, fixpertMarker, customerMarker, routingControl;
+
+        // Init profile panel
+        document.querySelector('#profilePanelLink')?.addEventListener('click', toggleProfile);
+        document.getElementById('signOutButton')?.addEventListener('click', logout);
+
+        if (!navigator.geolocation) {
+          alert("Geolocation not supported");
+          return;
+        }
+    
+        navigator.geolocation.getCurrentPosition(position => {
+          fixpertCoords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          const locationInput = document.getElementById('fixpertLocation'); // Replace with your actual input ID
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${fixpertCoords.lat}&lon=${fixpertCoords.lng}`)
+            .then(res => res.json())
+            .then(data => {
+              const address = data.display_name;
+              if (locationInput) locationInput.value = address;
+            });
+
+          console.log("Fixpert Coords Before Map Init:", fixpertCoords);
+    
+          initMap();
+    
+          const fixpertId = fixpert?.mechanicId;
+          socket.emit('register-fixpert', fixpertId);
+          socket.emit('fixpert-location', { fixpertId, location: fixpertCoords });
+    
+          startLocationUpdates(fixpertId);
+        },
+        error => {
+          console.error("Geolocation error:", error);
+          alert("Please enable location access in your browser.");
+        });
+    
+        function initMap() {
+          map = L.map('fixpertMap').setView([fixpertCoords.lat, fixpertCoords.lng], 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(map);
+    
+          fixpertMarker = L.marker(fixpertCoords).addTo(map)
+            .bindPopup('You (Fixpert)').openPopup();
+        }
+        console.log("Map initialized!");
+
+    
+        socket.on('new-customer-request', ({ name, location, distance, issue }) => {
+          currentCustomerCoords = location;
+          const container = document.getElementById('customerRequestContainer');
+          const requestCard = document.createElement('div');
+          requestCard.className = 'request-card';
+          requestCard.innerHTML = `
+            <h4>${name}</h4>
+            <p>Issue: ${issue}</p>
+            <p>Distance: ${distance.toFixed(2)} km</p>
+            <button class="accept" id="acceptRequestBtn">Accept</button>
+            <button class="decline">Decline</button>
+          `;
+          container.appendChild(requestCard);
+
+        });
+    
+    
+        function startLocationUpdates(fixpertId) {
+          setInterval(() => {
+            navigator.geolocation.getCurrentPosition(async (position) => {
+
+              const updatedCoords = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              };
+
+              fixpertCoords = updatedCoords;
+
+              // ✅ Update marker on map
+              if (fixpertMarker) {
+                fixpertMarker.setLatLng(fixpertCoords);
+              }
+
+              // ✅ Send via socket (already working)
+              socket.emit('fixpert-location', { fixpertId, location: updatedCoords });
+
+              try {
+                // 🔥 NEW: Send to backend DB
+                await fetch("http://localhost:5001/api/fixperts/update-location", {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                  },
+                  body: JSON.stringify({
+                    latitude: updatedCoords.lat,
+                    longitude: updatedCoords.lng
+                  })
+                });
+
+                console.log("Location updated in DB:", updatedCoords);
+
+              } catch (err) {
+                console.error("DB location update failed:", err);
+              }
+
+            });
+          }, 5000);
+        }
+
+        setInterval(fetchNearbyRequests, 5000);
+      });
+
+      async function fetchNearbyRequests() {
+          try {
+            const res = await fetch("http://localhost:5001/api/fixperts/nearby-requests", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+              }
+            });
+
+            const data = await res.json();
+
+            console.log("Nearby Requests:", data);
+
+            handleIncomingRequests(data);
+
+          } catch (err) {
+            console.error("Error fetching requests:", err);
+          }
+        }
+        // 🔥 CALL API
+        fetchNearbyRequests();
+
+      function handleIncomingRequests(requests) {
+        if (!requests || requests.length === 0) return;
+
+        // 🚫 already handling
+        if (currentRequest) return;
+
+        // 🚫 already accepted
+        if (localStorage.getItem("activeRequest")) return;
+
+        // 🚫 filter skipped
+        let skipped = JSON.parse(localStorage.getItem("skippedRequests") || "[]");
+        requests = requests.filter(r => !skipped.includes(r.requestId));
+
+        if (requests.length === 0) return;
+
+        requestQueue = [...requests];
+        currentRequest = null;
+        showNextRequest();
+      }
+
+      function showNextRequest() {
+        if (requestQueue.length === 0) return;
+
+        const req = requestQueue.shift();
+        currentRequest = {
+          ...req,
+          email: req.email || req.customerEmail || null
+        };
+        console.log("✅ FINAL REQUEST:", currentRequest);
+        // 🔥 CRITICAL FIX
+        currentCustomerCoords = {
+          lat: currentRequest.location.latitude,
+          lng: currentRequest.location.longitude
+        };
+
+        console.log("✅ Customer coords set:", currentCustomerCoords);
+
+        document.getElementById("overlayName").innerText = currentRequest.name;
+        document.getElementById("overlayIssue").innerText = currentRequest.issue;
+        //document.getElementById("overlayDistance").innerText = "Distance: " + currentRequest.distance + " km";
+
+        if (currentRequest.distance) {
+          if (currentRequest.distance < 1) {
+            // 🔥 convert to meters
+            const meters = Math.round(currentRequest.distance * 1000);
+            document.getElementById("overlayDistance").innerText = "Distance: "+ meters + " m";
+            
+          } else {
+            document.getElementById("overlayDistance").innerText = "Distance: "+ currentRequest.distance + " km";
+          }
+        }
+
+        document.getElementById("requestOverlay").style.display = "flex";
+
+        startTimer();
+      }
+
+      function startTimer() {
+        let time = 10;
+
+        document.getElementById("overlayTimer").innerText = time;
+
+        timerInterval = setInterval(() => {
+          time--;
+
+          document.getElementById("overlayTimer").innerText = time;
+
+          if (time <= 0) {
+            clearInterval(timerInterval);
+
+            if (currentRequest) {
+              skipRequest();
+            }
+          }
+        }, 1000);
+      }
+
+      /*
+      async function acceptRequest() {
+        clearInterval(timerInterval);
+        if (!currentCustomerCoords) {
+          console.warn("⚠️ Using fallback location");
+
+          currentCustomerCoords = {
+            lat: currentRequest.location.latitude,
+            lng: currentRequest.location.longitude
+          };
+        }
+
+        try {
+          await fetch("http://localhost:5001/api/fixperts/accept-request", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + localStorage.getItem("fixpertToken")
+            },
+            body: JSON.stringify({
+              requestId: currentRequest.requestId
+            })
+          });
+          // 🔥 IMPORTANT: SOCKET EMIT
+          const fixpert = JSON.parse(localStorage.getItem('fixpertData'));
+
+          console.log("CURRENT REQUEST:", currentRequest);
+
+          // 🔥 FORCE EMAIL
+          const customerEmail = (currentRequest.email).toLowerCase().trim();
+
+          if (!customerEmail) {
+            console.error("❌ EMAIL STILL MISSING:", currentRequest);
+            alert("Critical bug: Email missing. Check console.");
+            return;
+          }
+
+          console.log("🚀 EMITTING EVENT WITH EMAIL:", customerEmail);
+          console.log("🔥 FIXPERT OBJECT:", fixpert);
+          console.log("🔥 DISTANCE BEFORE EMIT:", fixpert.distance);
+          socket.emit("request-accepted", {
+            customerEmail,
+            fixpertInfo: {
+              name: fixpert.name,
+              phone: fixpert.phone,
+              mechanicId: fixpert.mechanicId,
+              location: fixpertCoords,
+              customerLocation: currentCustomerCoords,
+              distance: Number(fixpert.distance) 
+            }
+          }, (response) => {
+            console.log("✅ Server ACK received:", response);
+
+            // 🔥 ONLY REDIRECT AFTER ACK
+            setTimeout(() => {
+              window.location.href = "fixpertAccepted.html";
+            }, 800);
+          });
+
+        } catch (err) {
+          console.error("Accept error:", err);
+        }
+
+        document.getElementById("requestOverlay").style.display = "none";
+
+        localStorage.setItem("activeRequest", JSON.stringify(currentRequest));
+
+        currentRequest = null;
+        requestQueue = [];
+      }
+      */
+     async function acceptRequest() {
+      clearInterval(timerInterval);
+
+      if (!currentCustomerCoords) {
+        currentCustomerCoords = {
+          lat: currentRequest.location.latitude,
+          lng: currentRequest.location.longitude
+        };
+      }
+
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        console.log("📍 Live Fixpert Location:", lat, lng);
+
+        try {
+          // 🔥 STEP 1 — UPDATE LOCATION
+          await fetch("http://localhost:5001/api/fixperts/update-location", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + localStorage.getItem("fixpertToken")
+            },
+            body: JSON.stringify({
+              latitude: lat,
+              longitude: lng
+            })
+          });
+
+          console.log("✅ Location updated");
+
+          // 🔥 STEP 2 — ACCEPT REQUEST
+          await fetch("http://localhost:5001/api/fixperts/accept-request", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + localStorage.getItem("fixpertToken")
+            },
+            body: JSON.stringify({
+              requestId: currentRequest.requestId
+            })
+          });
+
+          console.log("✅ Request accepted");
+
+          // 🔥 STEP 3 — EMIT SOCKET EVENT (VERY IMPORTANT)
+          const fixpert = JSON.parse(localStorage.getItem('fixpertData'));
+
+          const customerEmail = currentRequest.email.toLowerCase().trim();
+
+          socket.emit("request-accepted", {
+            customerEmail,
+            fixpertInfo: {
+              name: fixpert.name,
+              phone: fixpert.phone,
+              mechanicId: fixpert.mechanicId,
+              location: { lat, lng }, // ✅ REAL LIVE LOCATION
+              customerLocation: currentCustomerCoords,
+              distance: Number(currentRequest.distance)
+            }
+          }, (res) => {
+            console.log("✅ Socket ACK:", res);
+          });
+
+          // 🔥 STEP 3 — STORE + REDIRECT
+          localStorage.setItem("activeRequest", JSON.stringify(currentRequest));
+
+          document.getElementById("requestOverlay").style.display = "none";
+
+          setTimeout(() => {
+            showLoaderAndRedirect("fixpertAccepted.html");
+          }, 500);
+
+          currentRequest = null;
+          requestQueue = [];
+
+        } catch (err) {
+          console.error("❌ Accept error:", err);
+        }
+
+      }, (err) => {
+        console.error("❌ GPS error:", err);
+        alert("Please enable location to accept request");
+      });
+    } 
+
+
+    function skipRequest() {
+      clearInterval(timerInterval);
+
+      if (!currentRequest) return;
+
+      let skipped = JSON.parse(localStorage.getItem("skippedRequests") || "[]");
+      skipped.push(currentRequest.requestId);
+      localStorage.setItem("skippedRequests", JSON.stringify(skipped));
+
+      fetch("http://localhost:5001/api/fixperts/skip-request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("fixpertToken")
+        },
+        body: JSON.stringify({
+          requestId: currentRequest.requestId
+        })
+      }).catch(() => {});
+
+      document.getElementById("requestOverlay").style.display = "none";
+
+      currentRequest = null;   // ✅ RESET
+      requestQueue = [];       // ✅ RESET
+
+      setTimeout(fetchNearbyRequests, 1000); // ✅ IMPORTANT
+    }
+
+    function showLoaderAndRedirect(url) {
+      document.getElementById("pageLoader").style.display = "flex";
+
+      setTimeout(() => {
+        window.location.href = url;
+      }, 1200); // 🔥 smooth delay
+    }
+  </script>
+    <div id="requestOverlay" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  ">
+
+    <div style="
+      width: 400px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    ">
+
+      <h2 id="overlayName">Customer</h2>
+      <p id="overlayIssue">Issue</p>
+      <p id="overlayDistance">Distance</p>
+
+      <h1 id="overlayTimer" style="color:#0f52ba;">10</h1>
+
+      <div style="display:flex; gap:10px; margin-top:15px;">
+        <button onclick="acceptRequest()" style="
+          flex:1;
+          background:#28a745;
+          color:#fff;
+          border:none;
+          padding:12px;
+          border-radius:10px;
+          cursor:pointer;
+        ">Accept</button>
+
+        <button onclick="skipRequest()" style="
+          flex:1;
+          background:#e53935;
+          color:#fff;
+          border:none;
+          padding:12px;
+          border-radius:10px;
+          cursor:pointer;
+        ">Skip</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="pageLoader" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+  ">
+
+    <div class="dot-loader">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+  </div>
+     
+</body>
+</html>

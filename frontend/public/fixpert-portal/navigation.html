@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Navigation</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    body { margin: 0; }
+
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+
+    .top-bar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 1000;
+    }
+
+    .btn {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .start {
+      position: absolute;
+      bottom: 20px;
+      left: 5%;
+      width: 90%;
+      background: #10b981;
+      color: #fff;
+      padding: 14px;
+      text-align: center;
+      border-radius: 30px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    .nav-container {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      box-shadow: 
+        0 6px 15px rgba(0,0,0,0.3),
+        0 0 0 4px rgba(255,255,255,0.6);
+    }
+
+    /* 🔥 ARROW */
+    .nav-arrow {
+      width: 0;
+      height: 0;
+
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 28px solid #2563eb;
+
+      transform: rotate(0deg);
+
+      filter: drop-shadow(0 3px 5px rgba(0,0,0,0.4));
+    }
+
+    /* 🔥 LIGHT EFFECT (3D FEEL) */
+    .nav-arrow::after {
+      content: "";
+      position: absolute;
+
+      left: -12px;
+      top: 6px;
+
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 28px solid rgba(255,255,255,0.3);
+
+      transform: scale(0.9);
+    }
+
+    #speed {
+      position: absolute;
+      top: 60px;
+      right: 20px;
+
+      z-index: 9999;  /* 🔥 VERY IMPORTANT */
+
+      background: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+
+      font-weight: bold;
+      font-size: 14px;
+
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+
+      pointer-events: none; /* prevents map interaction issues */
+    }
+
+    .dot-loader {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot-loader span {
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+
+    .dot-loader span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot-loader span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.5);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <button id="backBtn" onclick="goBack()">←</button>
+
+  <div id="map"></div>
+
+  <div id="etaBox" style="
+    position:absolute;
+    bottom:80px;
+    left:5%;
+    width:90%;
+    background:#fff;
+    padding:12px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:600;
+    z-index:1000;
+  ">
+    ETA: <span id="eta">--</span>
+  </div>
+  <div id="speed">🚴 0 km/h</div>
+
+  <div class="start" onclick="startNavigation()">
+    Start Navigation
+  </div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-rotatedmarker/leaflet.rotatedMarker.js"></script>
+
+<script>
+  let lastRouteUpdate = 0;
+  const request = JSON.parse(localStorage.getItem("navRequest"));
+  let watchId;
+  let isNavigating = false;
+  let currentLatLng = null;
+  let routeCoords = [];
+  let simIndex = 0;
+  let simulationInterval;
+  let lastAngle = 0;
+  let lastPosition = null;
+  let lastTime = null;
+  let currentSpeed = 0; // km/h
+
+  const customerLat = request.location.latitude;
+  const customerLng = request.location.longitude;
+
+  let map, fixpertMarker, routeLine;
+
+  // INIT MAP
+  map = L.map('map').setView([customerLat, customerLng], 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+  // CUSTOMER MARKER
+  L.marker([customerLat, customerLng]).addTo(map)
+    .bindPopup("Customer");
+
+  // GET INITIAL FIXPERT LOCATION
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+
+    const fixpertLat = pos.coords.latitude;
+    const fixpertLng = pos.coords.longitude;
+
+    // FIXPERT MARKER
+    const bikeIcon = L.icon({
+      iconUrl: "../images/nav-icon.png",
+      className: "nav-marker",
+      html: `
+        <div class="nav-container">
+          <div class="nav-arrow"></div>
+        </div>
+      `,
+      iconSize: [70, 70],
+      iconAnchor: [35, 35]
+    });
+
+    fixpertMarker = L.marker([fixpertLat, fixpertLng], {
+      icon: bikeIcon,
+      rotationAngle: 0
+    }).addTo(map)
+      .bindPopup("You");
+
+    // 🔥 GET ROUTE FROM OSRM
+    const route = await fetchRoute(fixpertLat, fixpertLng);
+
+    routeLine = L.polyline(route, { color: 'blue', weight: 5 }).addTo(map);
+    completedLine = L.polyline([], {
+      color: 'gray',
+      weight: 5
+    }).addTo(map);
+
+    map.fitBounds(routeLine.getBounds());
+
+  });
+
+  const ORS_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImM2NThlOTg0MDJiZTQwMjJiMDAwNmY4MDljM2E1YTU4IiwiaCI6Im11cm11cjY0In0=";
+
+  async function fetchRoute(lat, lng) {
+    const res = await fetch(
+      "https://api.openrouteservice.org/v2/directions/driving-car/geojson",
+      {
+        method: "POST",
+        headers: {
+          "Authorization": ORS_API_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          coordinates: [
+            [lng, lat], // fixpert
+            [customerLng, customerLat] // customer
+          ]
+        })
+      }
+    );
+
+    const data = await res.json();
+    const summary = data.features[0].properties.summary;
+
+    console.log("Distance:", summary.distance);
+    console.log("Duration:", summary.duration);
+
+    // ✅ UPDATE UI
+    const etaElement = document.getElementById("eta");
+    if (etaElement) {
+      etaElement.innerText = Math.round(summary.duration / 60) + " min";
+    }
+
+    //return data.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+    routeCoords = data.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+    return routeCoords;
+  }
+
+  // 🚀 START LIVE NAVIGATION
+  /*
+  function startNavigation() {
+    // 🔥 prevent multiple clicks
+    if (isNavigating) return;
+    isNavigating = true;
+
+    const startBtn = document.querySelector(".start");
+    startBtn.innerText = "Starting...";
+    startBtn.style.background = "#2563eb";
+
+    watchId = navigator.geolocation.watchPosition(
+
+      async (pos) => {
+
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        const newLatLng = [lat, lng];
+
+        // 🔥 FIRST TIME
+        if (!currentLatLng) {
+          currentLatLng = newLatLng;
+          fixpertMarker.setLatLng(newLatLng);
+          map.setView(newLatLng, 16);
+          startBtn.innerText = "Navigating...";
+          return;
+        }
+
+        const angle = getRotation(currentLatLng, newLatLng);
+        // 🔥 SMOOTH MOVEMENT
+        smoothMoveMarker(currentLatLng, newLatLng);
+
+        fixpertMarker.setRotationAngle(angle);
+
+        currentLatLng = newLatLng;
+
+        // 🔥 AUTO FOLLOW CAMERA
+        map.setView(newLatLng, 17, {
+        animate: true,
+        duration: 1
+      });
+
+        // 🔥 ROUTE UPDATE (THROTTLED)
+        const now = Date.now();
+        if (now - lastRouteUpdate > 4000) {
+          lastRouteUpdate = now;
+
+          const route = await fetchRoute(lat, lng);
+          routeLine.setLatLngs(route);
+        }
+        const distance = map.distance(newLatLng, [customerLat, customerLng]);
+
+        if (distance < 30) {
+          alert("Reached Customer 🎉");
+
+          navigator.geolocation.clearWatch(watchId);
+
+          // optional: go back
+          window.location.href = "fixpertAccepted.html";
+        }
+
+      },
+
+      (err) => {
+        console.warn("GPS issue:", err.message);
+      },
+
+      {
+        enableHighAccuracy: false,
+        maximumAge: 10000,
+        timeout: 20000
+      }
+    );
+  }
+    */
+
+  function startNavigation() {
+
+    if (isNavigating) return;
+    isNavigating = true;
+
+    document.querySelector(".start").innerText = "Simulating...";
+
+    simIndex = 0; // ✅ FIXED POSITION
+
+    simulationInterval = setInterval(() => {
+
+      if (!routeCoords || routeCoords.length === 0) return;
+
+      if (simIndex >= routeCoords.length - 1) {
+        clearInterval(simulationInterval);
+        alert("Reached Customer 🎉");
+        return;
+      }
+
+      const start = routeCoords[simIndex];
+      const end = routeCoords[simIndex + 1] || routeCoords[simIndex];
+
+      moveSmooth(start, end, 5000);
+
+      // ✅ REAL ROTATION
+      const angle = getRotation(start, end);
+      fixpertMarker.setRotationAngle(angle);
+
+      // ✅ SPEED CALCULATION
+      const now = Date.now();
+
+      if (lastPosition) {
+        const distance = map.distance(end, lastPosition); // meters
+        const timeDiff = (now - lastTime) / 1000; // seconds
+
+        currentSpeed = (distance / timeDiff) * 3.6; // km/h
+      }
+
+      lastPosition = end;
+      lastTime = now;
+
+      // ✅ UPDATE SPEED UI
+      document.getElementById("speed").innerText =
+        currentSpeed.toFixed(1) + " km/h";
+
+
+      // ✅ REMAINING DISTANCE
+      const remainingDistance = getRemainingDistance(simIndex);
+
+      // ✅ ETA CALCULATION
+      if (currentSpeed > 2) {
+        const etaSeconds = remainingDistance / (currentSpeed / 3.6);
+        const etaMinutes = Math.ceil(etaSeconds / 60);
+
+        document.getElementById("eta").innerText =
+          "ETA: " + etaMinutes + " min";
+      } else {
+        document.getElementById("eta").innerText = "Calculating...";
+      }
+
+       const completed = routeCoords.slice(0, simIndex);
+      const remaining = routeCoords.slice(simIndex);
+
+      completedLine.setLatLngs(completed);
+      routeLine.setLatLngs(remaining);
+
+      map.setView(end, 17);
+
+      simIndex++;
+
+    }, 5000);
+  }
+
+  function moveSmooth(start, end, duration) {
+
+    let startTime = null;
+
+    function animate(time) {
+      if (!startTime) startTime = time;
+
+      const progress = time - startTime;
+      const t = Math.min(progress / duration, 1);
+
+      const lat = start[0] + (end[0] - start[0]) * t;
+      const lng = start[1] + (end[1] - start[1]) * t;
+
+      fixpertMarker.setLatLng([lat, lng]);
+
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+  function smoothMoveMarker(start, end) {
+    let steps = 20;
+    let i = 0;
+
+    const latStep = (end[0] - start[0]) / steps;
+    const lngStep = (end[1] - start[1]) / steps;
+
+    const interval = setInterval(() => {
+      if (i >= steps) {
+        clearInterval(interval);
+        return;
+      }
+
+      const lat = start[0] + latStep * i;
+      const lng = start[1] + lngStep * i;
+
+      fixpertMarker.setLatLng([lat, lng]);
+
+      i++;
+    }, 50);
+  }
+  // 🔙 BACK
+  function goBack() {
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    showLoaderAndRedirect("fixpertAccepted.html");
+  }
+
+  function getRotation(start, end) {
+    const lat1 = start[0] * Math.PI / 180;
+    const lat2 = end[0] * Math.PI / 180;
+    const dLng = (end[1] - start[1]) * Math.PI / 180;
+
+    const y = Math.sin(dLng) * Math.cos(lat2);
+    const x =
+      Math.cos(lat1) * Math.sin(lat2) -
+      Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+
+    let bearing = Math.atan2(y, x) * 180 / Math.PI;
+
+    return (bearing + 360) % 360;
+  }
+  function getRemainingDistance(index) {
+    let distance = 0;
+
+    for (let i = index; i < routeCoords.length - 1; i++) {
+      distance += map.distance(routeCoords[i], routeCoords[i + 1]);
+    }
+
+    return distance; // meters
+  }
+
+  function showLoaderAndRedirect(url) {
+    document.getElementById("pageLoader").style.display = "flex";
+
+    setTimeout(() => {
+      window.location.href = url;
+    }, 1200); // 🔥 smooth delay
+  }
+</script>
+
+  <div id="pageLoader" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+  ">
+
+    <div class="dot-loader">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+  </div>
+
+</body>
+</html>

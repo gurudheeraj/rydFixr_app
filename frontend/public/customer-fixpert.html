@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RydFixr | Choose Interface</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .split-screen {
+      display: flex;
+      height: 100vh;
+    }
+
+    .side {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem;
+      transition: 0.4s ease;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .side::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      opacity: 0.3;
+      z-index: 0;
+    }
+
+    .side-content {
+      z-index: 1;
+      text-align: center;
+    }
+
+    .customer {
+      background-color: #0f52ba;
+    }
+
+    .fixpert {
+      background-color: #10b981;
+    }
+
+    .side h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .side p {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      background: rgba(240, 237, 237, 0.9);
+      color: #1e293b;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .btn:hover {
+      background: white;
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+      .split-screen {
+        flex-direction: column;
+      }
+
+      .side {
+        height: 50vh;
+      }
+    }
+    footer {
+      background: white;
+      color: #7F7F7F;
+      text-align: center;
+      padding: 2rem;
+      margin: 16px 0px;
+      font-family:sans-serif,Noto Sans,Noto Sans CJK;
+      font: 26px;
+    }
+  </style>
+</head>
+<body>
+  <div class="split-screen">
+    <div class="side customer">
+      <div class="side-content">
+        <h2>I'm a Customer</h2>
+        <p>Book a fixpert, track your service, and get quick repairs.</p>
+        <a href="customer-portal/registration.html" class="btn">Go to Customer Portal</a>
+      </div>
+    </div>
+    <div class="side fixpert">
+      <div class="side-content">
+        <h2>I'm a Fixpert</h2>
+        <p>Accept jobs, earn money, and manage your schedule.</p>
+        <a href="fixpert-portal/registration.html" class="btn">Go to Fixpert Portal</a>
+      </div>
+    </div>
+  </div>
+  <footer>
+    &copy; 2026 rydFixr services. All rights reserved.
+  </footer>
+</body>
+</html>

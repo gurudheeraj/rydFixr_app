@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fixpert Registration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Same styles reused */
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #10b981, #1e723e);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #fff;
+      padding: 2.5rem 3rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #10b981;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      border-color: #10b981;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 0.9rem;
+      margin-top: 1rem;
+      background: #10b981;
+      color: white;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #10b950;
+    }
+    .link {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .link a {
+      color: #10b981;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .link a:hover {
+      text-decoration: underline;
+    }
+    .error {
+      color: red;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      text-align: center;
+    }
+    footer {
+      background: white;
+      color: #7F7F7F;
+      text-align: center;
+      padding: 2rem;
+      margin: 16px 0px;
+      font-family:sans-serif,Noto Sans,Noto Sans CJK;
+      font: 26px;
+    }
+
+    .dot-loader {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot-loader span {
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+
+    .dot-loader span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot-loader span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.5);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Fixpert Registration</h2>
+    <form id="registerForm">
+      <input type="text" name="name" placeholder="Full Name" required autofocus/>
+      <input type="email" name="email" placeholder="Email" required />
+      <input type="tel" name="phone" placeholder="Phone Number" required />
+      <input type="password" name="password" placeholder="Password" required id="pwd"/>
+      <button type="submit">Register</button>
+      <div class="error" id="error-message"></div>
+    </form>
+    <div class="link">
+      Already registered? <a href="login.html">Login</a>
+    </div>
+    <footer>
+      &copy; 2026 rydFixr services. All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const errorMessageElement = document.getElementById('error-message');
+      errorMessageElement.textContent = ''; // Clear previous error messages
+
+      const formData = {
+        name: e.target.name.value,
+        email: e.target.email.value,
+        phone: e.target.phone.value,
+        password: e.target.password.value
+      };
+
+      // Basic form validation
+      if (!formData.name || !formData.email || !formData.phone || !formData.password) {
+        errorMessageElement.textContent = 'Please fill out all fields.';
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5001/api/fixperts/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert('Registration successful! Please check your email for OTP.');
+          localStorage.setItem('fixpertOtpEmail', formData.email); // Store email for OTP
+          showLoaderAndRedirect('otp.html'); // Redirect to OTP verification
+        } else {
+          errorMessageElement.textContent = result.message || 'Registration failed. Please try again.';
+        }
+      } catch (err) {
+        errorMessageElement.textContent = 'Error: Unable to connect to the server. Please try again later.';
+      }
+    });
+
+    function showLoaderAndRedirect(url) {
+      document.getElementById("pageLoader").style.display = "flex";
+
+      setTimeout(() => {
+        window.location.href = url;
+      }, 1200); // 🔥 smooth delay
+    }
+  </script>
+
+  <div id="pageLoader" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+  ">
+
+    <div class="dot-loader">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+  </div>
+</body>
+</html>

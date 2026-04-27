@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OTP Verification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #1e3c72, #2a5298);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .otp-container {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+
+    .otp-container h2 {
+      color: #0f52ba;
+      margin-bottom: 1rem;
+    }
+
+    .otp-container p {
+      color: #475569;
+      margin-bottom: 1.5rem;
+    }
+
+    input[type="text"] {
+      width: 93%;
+      padding: 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      letter-spacing: 4px;
+    }
+    input[type="text"]:hover{
+      outline: none;
+      border-color: #0f52ba;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      background: #0f52ba;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #0d47a1;
+    }
+
+    .resend {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #1e3c72;
+    }
+
+    .resend a {
+      color: #0f52ba;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .resend a:hover {
+      text-decoration: underline;
+    }
+    footer {
+      background: white;
+      color: #7F7F7F;
+      text-align: center;
+      padding: 2rem;
+      margin: 16px 0px;
+      font-family:sans-serif,Noto Sans,Noto Sans CJK;
+      font: 26px;
+    }
+
+    .dot-loader {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot-loader span {
+      width: 14px;
+      height: 14px;
+      background: #0f52ba;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+
+    .dot-loader span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot-loader span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.5);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="otp-container">
+    <h2>OTP Verification</h2>
+    <p>Please enter the 6-digit code sent to your email or phone</p>
+    <form id="otpForm">
+      <input type="text" id="otp" maxlength="6" placeholder="Enter OTP" required />
+      <button type="submit">Verify</button>
+    </form>
+    <div class="resend">
+      Didn't receive the code? <a href="#" id="resendOTP">Resend OTP</a>
+    </div>
+    <footer>
+      &copy; 2026 rydFixr services. All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    // Event listener for OTP form submission
+    document.getElementById('otpForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const otp = document.getElementById('otp').value;
+      const email = localStorage.getItem('otpEmail'); // saved during registration
+
+      if (!email) {
+        alert('No email found. Please register again.');
+        return;
+      }
+
+      const res = await fetch('http://localhost:5000/api/customers/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert('OTP Verified! Please check your mail for Login Credentials!!');
+        showLoaderAndRedirect("login.html");
+      } else {
+        alert(data.message || 'Invalid OTP. Please try again.');
+      }
+    });
+
+    // Event listener for Resend OTP link
+    /*document.getElementById('resendOTP').addEventListener('click', async function(e) {
+      e.preventDefault();
+      const email = localStorage.getItem('otpEmail'); // saved during registration
+
+      if (!email) {
+        alert('No email found. Please register again.');
+        return;
+      }
+
+      const res = await fetch('http://localhost:5000/api/customers/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert('A new OTP has been sent to your email.');
+      } else {
+        alert(data.message || 'Error sending OTP. Please try again.');
+      }
+    }); */
+    document.getElementById('resendOTP').addEventListener('click', async function(e) {
+      e.preventDefault();
+      console.log('Resend OTP clicked'); // ✅ Debug log
+      const email = localStorage.getItem('otpEmail');
+      console.log('Email from localStorage:', email); // ✅ Debug log
+      if (!email) {
+        alert('No email found. Please register again.');
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/api/customers/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+        const data = await res.json();
+        console.log('Server response:', data); // ✅ Debug log
+        if (res.ok) {
+          alert('A new OTP has been sent to your email.');
+        } 
+        else {
+          alert(data.message || 'Error sending OTP. Please try again.');
+        }
+      } 
+      catch (err) {
+        console.error('Fetch error:', err); // ✅ Debug log
+        alert('Network error. Please try again.');
+      }
+    });
+
+    function showLoaderAndRedirect(url) {
+      document.getElementById("pageLoader").style.display = "flex";
+
+      setTimeout(() => {
+        window.location.href = url;
+      }, 1200); // 🔥 smooth delay
+    }
+
+  </script>
+
+  <div id="pageLoader" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+  ">
+
+    <div class="dot-loader">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+  </div>
+</body>
+</html>

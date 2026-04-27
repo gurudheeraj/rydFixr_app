@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Track Fixpert</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <style>
+    body { margin:0; font-family: Arial; }
+
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+    .back-btn {
+      position: absolute;
+      top: 15px;
+      left: 60px;
+      z-index: 9999;
+      background: white;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .eta-box {
+      position: absolute;
+      top: 15px;
+      right: 20px;   /* 🔥 move to right */
+      z-index: 9999;
+
+      background: #fff;
+      padding: 10px 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-weight: bold;
+    }
+
+    .dot-loader {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot-loader span {
+      width: 14px;
+      height: 14px;
+      background: #0f52ba;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+
+    .dot-loader span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot-loader span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.5);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- BACK BUTTON -->
+  <div class="back-btn" onclick="goBack()">⬅</div>
+
+  <!-- ETA BOX -->
+  <div class="eta-box">
+    ETA: <span id="eta">Calculating...</span>
+  </div>
+
+  <div id="map"></div>
+  <div id="cancelScreen" style="
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:#fff;
+    z-index:99999;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    text-align:center;
+  ">
+
+    <h2>🔧 Service Cancelled</h2>
+    <p>Your request has been successfully cancelled.</p>
+    <p>Need help again? Book a Fixpert anytime.</p>
+
+    <button onclick="goHome()" style="
+      margin-top:20px;
+      padding:12px 20px;
+      border:none;
+      background:#0f52ba;
+      color:#fff;
+      border-radius:8px;
+      cursor:pointer;
+    ">
+      Go to Dashboard
+    </button>
+
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="http://localhost:5001/socket.io/socket.io.js"></script>
+
+
+<script>
+  const socket = io("http://localhost:5001");
+  let lastETA = null;
+  let routeLine = null;
+
+  const etaEl = document.getElementById("eta");
+  etaEl.style.transform = "scale(1.2)";
+  setTimeout(() => etaEl.style.transform = "scale(1)", 200);
+
+  
+
+  const fixpert = JSON.parse(localStorage.getItem("fixpertDetails"));
+  const request = JSON.parse(localStorage.getItem("fixpertRequest"));
+
+  if (!request) {
+    console.error("❌ Missing request → showing cancel screen");
+    showCancelScreen();
+  }
+
+  // ✅ FLEXIBLE LOCATION EXTRACTION
+  const userLat =
+    request?.latitude ||
+    request?.location?.lat;
+
+  const userLng =
+    request?.longitude ||
+    request?.location?.lng;
+
+  if (!userLat || !userLng) {
+    console.error("❌ Invalid location → showing cancel screen");
+    showCancelScreen();
+  }
+  // 🔥 BACKUP CHECK (VERY IMPORTANT)
+  if (localStorage.getItem("rideCancelled") === "true") {
+    showCancelScreen();
+  }
+  
+  // 🔥 REGISTER CUSTOMER SOCKET (AFTER request is available)
+  const customerEmail = localStorage.getItem("customerEmail");
+
+  if (customerEmail) {
+    socket.emit("register-customer", customerEmail);
+  }
+  // 🔥 IF DATA MISSING → SHOW CANCEL SCREEN
+  if (!fixpert || !request) {
+    showCancelScreen();
+  }
+  const ORS_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImM2NThlOTg0MDJiZTQwMjJiMDAwNmY4MDljM2E1YTU4IiwiaCI6Im11cm11cjY0In0=";
+
+  const map = L.map('map').setView(
+    [userLat, userLng],
+    14
+  );
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+    .addTo(map);
+
+  // MARKERS
+  const customerMarker = L.marker([
+    userLat,
+    userLng
+  ]).addTo(map).bindPopup("You");
+
+  const bikeIcon = L.divIcon({
+    html: `<img id="bikeIcon" src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" 
+            style="width:40px; transform: rotate(0deg); transition: transform 0.5s linear;">`,
+    className: '',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+  });
+
+  const fixLat = parseFloat(fixpert?.location?.lat ?? 0);
+  const fixLng = parseFloat(fixpert?.location?.lng ?? 0);
+
+  if (isNaN(fixLat) || isNaN(fixLng) || isNaN(userLat) || isNaN(userLng)) {
+    console.error("Invalid coordinates");
+    showCancelScreen();
+  }
+
+  let fixpertMarker = L.marker([
+    fixLat,
+    fixLng
+  ], { icon: bikeIcon }).addTo(map).bindPopup("Fixpert");
+
+  // 🔥 DRAW INITIAL ROUTE (IMPORTANT)
+  if (fixpert?.location?.lat && fixpert?.location?.lng) {
+    drawRealRoute(
+      { lat: fixpert.location.lat, lng: fixpert.location.lng },
+      { lat: userLat, lng: userLng }
+    );
+  }
+
+  // 🔥 CALCULATE INITIAL ETA
+  updateETA(
+    fixLat,
+    fixLng
+  );
+
+  function getAngle(from, to) {
+    const dy = to.lat - from.lat;
+    const dx = to.lng - from.lng;
+
+    const theta = Math.atan2(dy, dx); // radians
+    let angle = theta * (180 / Math.PI); // degrees
+
+    return angle;
+  }
+
+  // 🔥 DISTANCE FUNCTION
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI/180;
+    const dLon = (lon2 - lon1) * Math.PI/180;
+
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+  }
+
+
+  function updateETA(lat, lng) {
+    const dist = getDistance(
+      lat,
+      lng,
+      userLat,
+      userLng
+    );
+
+    // 🔥 dynamic speed (adjustable)
+    const speed = 25 + Math.random() * 10; // 25–35 km/h realistic bike speed
+
+    let time = (dist / speed) * 60;
+
+    // 🔥 smoothing ETA (avoid jumps)
+    if (lastETA !== null) {
+      time = (lastETA * 0.7) + (time * 0.3);
+    }
+
+    lastETA = time;
+
+    // 🔥 UI display logic
+    let text;
+
+    if (dist < 0.1) {
+      text = "Arrived 🚀";
+    } else if (time < 1) {
+      text = "Arriving in few seconds";
+    } else if (time < 2) {
+      text = "Arriving soon";
+    } else {
+      text = Math.round(time) + " mins";
+    }
+
+    document.getElementById("eta").innerText = text;
+  }
+
+  // 🔥 ROUTE LINE
+  async function drawRealRoute(start, end) {
+  // ✅ validate input
+    if (
+      !start || !end ||
+      isNaN(start.lat) || isNaN(start.lng) ||
+      isNaN(end.lat) || isNaN(end.lng)
+    ) {
+      console.error("Invalid coords:", start, end);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        "https://api.openrouteservice.org/v2/directions/driving-car/geojson",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": ORS_API_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            coordinates: [
+              [start.lng, start.lat],
+              [end.lng, end.lat]
+            ]
+          })
+        }
+      );
+
+      if (!res.ok) {
+        console.warn("ORS failed → fallback");
+        fallbackRoute(start, end);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (!data.features || data.features.length === 0) {
+        console.warn("Empty route → fallback");
+        fallbackRoute(start, end);
+        return;
+      }
+
+      const coords = data.features[0].geometry.coordinates;
+
+      if (!coords || coords.length === 0) {
+        fallbackRoute(start, end);
+        return;
+      }
+
+      const latlngs = coords.map(c => [c[1], c[0]]);
+
+      if (!latlngs || latlngs.length === 0) {
+        fallbackRoute(start, end);
+        return;
+      }
+
+      // ✅ SAFE DRAW
+      if (routeLine) {
+        routeLine.setLatLngs(latlngs);
+      } else {
+        routeLine = L.polyline(latlngs, {
+          color: "#0f52ba",
+          weight: 5
+        }).addTo(map);
+        map.fitBounds(routeLine.getBounds(), {
+          padding: [50, 50]
+        });
+      }
+
+      // ✅ ETA
+      const duration = data.features[0].properties.summary.duration;
+      const mins = Math.ceil(duration / 60);
+
+      document.getElementById("eta").innerText =
+        mins <= 1 ? "Arriving soon" : mins + " mins";
+
+    } catch (err) {
+      console.error("ORS crash → fallback", err);
+      fallbackRoute(start, end);
+    }
+  }
+
+  function fallbackRoute(start, end) {
+    if (!start || !end) return;
+
+    const points = [
+      [start.lat, start.lng],
+      [end.lat, end.lng]
+    ];
+
+    if (!points[0][0] || !points[1][0]) return;
+
+    if (routeLine) {
+      routeLine.setLatLngs(points);
+    } else {
+      routeLine = L.polyline(points, {
+        color: "gray",
+        dashArray: "6,6"
+      }).addTo(map);
+    }
+
+    // fallback ETA
+    const dist = getDistance(start.lat, start.lng, end.lat, end.lng);
+    const time = (dist / 30) * 60;
+
+    document.getElementById("eta").innerText =
+      time < 1 ? "Arriving soon" : Math.round(time) + " mins";
+  }
+
+  // 🔥 SMOOTH MOVEMENT FUNCTION
+  function animateMarker(from, to, duration = 1000) {
+    const start = performance.now();
+
+    function animate(time) {
+      const progress = Math.min((time - start) / duration, 1);
+
+      const lat = from.lat + (to.lat - from.lat) * progress;
+      const lng = from.lng + (to.lng - from.lng) * progress;
+
+      fixpertMarker.setLatLng([lat, lng]);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  let lastPosition = {
+    lat: fixpert?.location?.lat ?? 0,
+    lng: fixpert?.location?.lng ?? 0
+  };
+
+  // 🔥 LIVE TRACKING WITH SMOOTH ANIMATION
+  socket.on("fixpert-location-update", async (payload) => {
+
+    const data = payload.location ? payload.location : payload;
+
+    if (!data || data.lat == null || data.lng == null) {
+      console.warn("Invalid fixpert location:", payload);
+      return;
+    }
+    // 🔥 SNAP TO ROAD (every ~2 sec max)
+    let newPos;
+
+    if (!window.lastSnap || Date.now() - window.lastSnap > 2000) {
+      newPos = await snapToRoad(data.lat, data.lng);
+      window.lastSnap = Date.now();
+    } else {
+      newPos = {
+        lat: data.lat,
+        lng: data.lng
+      };
+    }
+
+    // 🔥 ROTATION
+    const angle = getAngle(lastPosition, newPos);
+    const bikeImg = document.getElementById("bikeIcon");
+
+    if (bikeImg) {
+      bikeImg.style.transform = `rotate(${angle}deg)`;
+    }
+
+    // 🔥 SMOOTH MOVEMENT
+    animateMarker(lastPosition, newPos, 1200);
+    updateETA(newPos.lat, newPos.lng);
+
+    // 🔥 ROUTE + ETA (controlled)
+    if (!window.lastRouteUpdate || Date.now() - window.lastRouteUpdate > 15000) {
+
+      drawRealRoute(
+        { lat: newPos.lat, lng: newPos.lng },
+        { lat: userLat, lng: userLng }
+      );
+
+      window.lastRouteUpdate = Date.now();
+    }
+
+    // 🔥 PAN MAP
+    map.panTo([newPos.lat, newPos.lng], { animate: true });
+    checkArrival(newPos.lat, newPos.lng);
+
+    lastPosition = newPos;
+  });
+
+  // 🔥 HANDLE CANCEL EVENT
+  socket.on("ride-cancelled", () => {
+    showCancelScreen();
+  });
+
+  async function snapToRoad(lat, lng) {
+    try {
+      const res = await fetch("https://api.openrouteservice.org/v2/snap/driving-car", {
+        method: "POST",
+        headers: {
+          "Authorization": ORS_API_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          locations: [[lng, lat]]
+        })
+      });
+
+      const data = await res.json();
+      if (!data.locations || data.locations.length === 0) {
+        return { lat, lng };
+      }
+      const snapped = data.locations[0];
+
+      return {
+        lat: snapped.location[1],
+        lng: snapped.location[0]
+      };
+
+    } catch (err) {
+      console.error("Snap error:", err);
+      return { lat, lng }; // fallback
+    }
+  }
+
+  function checkArrival(lat, lng) {
+    const dist = getDistance(
+      lat,
+      lng,
+      userLat,
+      userLng
+    );
+
+    // 🔥 within 50 meters
+    if (dist < 0.05 && !window.arrived) {
+      window.arrived = true;
+
+      onFixpertArrived();
+    }
+  }
+  function onFixpertArrived() {
+    if (navigator.vibrate) {
+      navigator.vibrate([300, 200, 300]);
+    }
+
+    document.getElementById("eta").innerText = "Arrived 🚀";
+
+    const div = document.createElement("div");
+    div.innerText = "Fixpert has arrived 🚀";
+    div.style.position = "absolute";
+    div.style.bottom = "20px";
+    div.style.left = "50%";
+    div.style.transform = "translateX(-50%)";
+    div.style.background = "#0f52ba";
+    div.style.color = "#fff";
+    div.style.padding = "12px 20px";
+    div.style.borderRadius = "10px";
+    div.style.zIndex = "9999";
+
+    document.body.appendChild(div);
+  }
+
+  function goBack() {
+    window.history.back();
+  }
+
+  function showCancelScreen() {
+    localStorage.removeItem("rideCancelled");
+    console.log("🚫 Ride Cancelled → Showing UI");
+
+    // stop tracking updates
+    if (typeof socket !== "undefined") {
+      socket.off("fixpert-location-update");
+    }
+
+    // hide map
+    document.getElementById("map").style.display = "none";
+
+    // show cancel UI
+    const screen = document.getElementById("cancelScreen");
+    screen.style.display = "flex";
+
+    // clear data
+    localStorage.removeItem("fixpertDetails");
+    localStorage.removeItem("fixpertRequest");
+  }
+
+  function goHome() {
+    showLoaderAndRedirect("customer-dashboard.html");
+  }
+
+  function showLoaderAndRedirect(url) {
+    document.getElementById("pageLoader").style.display = "flex";
+    setTimeout(()=>{
+        window.location.href=url;
+    },1200);
+  }
+
+</script>
+
+  <div id="pageLoader" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    ">
+
+    <div class="dot-loader">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+  </div>
+
+</body>
+</html>

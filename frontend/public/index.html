@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RydFixr - Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rampart+One&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f8fafc;
+      scroll-behavior: smooth;
+    }
+    header {
+      background: rgb(238, 237, 237);
+      color: #0f52ba;
+      padding: 20px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      font-weight: bold;
+      font-family: 'Rampart One', cursive;
+      font-size: 20px;
+    }
+    nav {
+      display: flex;
+      gap: 1rem;
+    }
+    nav a {
+      color: black;
+      text-decoration: none;
+      font-size: 20px;
+    }
+    nav a:hover{
+        color:#7F7F7F;
+    }
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: blue;
+      cursor: pointer;
+    }
+    .mobile-nav {
+      display: none;
+      flex-direction: column;
+      background: transparent;
+      position: absolute;
+      top: 64px;
+      left: 0;
+      width: 100%;
+      z-index: 9;
+      align-items: center;
+    }
+    .mobile-nav a {
+        color:white;
+        font-size: 20px;
+        padding: 20px;
+        border: 1px;
+      padding: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      text-decoration: none;
+    }
+    .mobile-nav a:hover{
+        padding: 20px;
+        border: 1px;
+        border-radius: 10px;
+        border-color: white;
+        background-color: white;
+        color:#0f52ba;
+
+    }
+    .show-menu {
+      display: flex;
+    }
+    @media (max-width: 768px) {
+      nav {
+        display: none;
+      }
+      .menu-toggle {
+        display: block;
+      }
+      .flex-row {
+        flex-direction: column;
+      }
+    }
+    .hero {
+      position: relative;
+      color: white;
+      text-align: center;
+      height: 93vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('images/bg-mech1.jpg') no-repeat center center/cover;
+      border-radius: 10px;
+      filter: blur(4px);
+      z-index: -1;
+    }
+    .hero h1 {
+      font-size: 5rem;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      font-family: 'Rampart One', cursive;
+    }
+    .hero h3{
+      font-size: 48px;
+      font-family:sans-serif,Noto Sans,Noto Sans CJK;
+      font-family:cursive;
+    }
+    .section {
+      padding: 4rem 5vw;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .section.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .section h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #0f52ba;
+    }
+    .section p {
+      font-size: 30px;
+      color: #475569;
+      max-width: 700px;
+      margin: 0 auto 2rem;
+    }
+    .btn {
+      padding: 0.75rem 1.5rem;
+      background: #0f52ba;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: #0d47a1;
+    }
+    .img-row {
+      display: flex;
+      justify-content: center;
+      gap: 10rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+    .img-row img {
+      width: 250px;
+      height: auto;
+      border-radius: 8px;
+    }
+    .flex-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      text-align: left;
+    }
+    .flex-row img {
+      width: 300px;
+      border-radius: 8px;
+    }
+
+    footer {
+      background: white;
+      color: #7F7F7F;
+      text-align: center;
+      padding: 2rem;
+      margin: 16px 0px;
+      font-family:sans-serif,Noto Sans,Noto Sans CJK;
+      font: 26px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">rydFixr</div>
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="aboutus.html">About Us</a>
+      <a href="contactus.html">Contact Us</a>
+      <a href="customer-fixpert.html">Login / Signup</a>
+    </nav>
+    <div class="mobile-nav" id="mobileNav">
+      <a href="index.html" onclick="toggleMenu()">Home</a>
+      <a href="aboutus.html" onclick="toggleMenu()">About Us</a>
+      <a href="contactus.html" onclick="toggleMenu()">Contact Us</a>
+      <a href="customer-fixpert.html" onclick="toggleMenu()">Login / Signup</a>
+    </div>
+  </header>
+
+  <section class="hero" id="home">
+    <h1>rydFixr</h1>
+    <h3>your ride ~ our fix ~ on the go</h3>
+  </section>
+
+  <section class="section" id="services">
+    <h2>Our Services</h2>
+    <div class="img-row">
+      <img src="images/service2.webp" alt="Service 1" title="Bike Mechanic Service">
+      <img src="images/service1.webp" alt="Service 2" title="Spare Parts Delivery">
+    </div>
+  </section>
+
+  <section class="section" id="quick-rydfix">
+    <h2>Get Quick RydFix</h2>
+    <div class="flex-row">
+      <img src="images/quick-repair.jpg" alt="Quick Fix">
+      <div>
+        <p>In RydFixr, we ensure our customers get their ride fixed quickly at the most affordable prices.</p>
+        <a href="customer-portal/registration.html" class="btn">Book Fixpert</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="fixpert-benefits">
+    <h2>Flexible Hours & High Earnings</h2>
+    <div class="flex-row">
+      <div>
+        <p>Join RydFixr as a Fixpert and earn on your own terms. Choose your hours and enjoy high income opportunities.</p>
+        <a href="fixpert-portal/registration.html" class="btn">Start Earning</a>
+      </div>
+      <img src="images/mechanic.jpg" alt="Flexible Work">
+    </div>
+  </section>
+
+  <section class="section" id="secure-service">
+    <h2>Fast & Secure</h2>
+    <div class="flex-row">
+        <img src="images/fast&secure.jpg" alt="Fast & Secure">
+        <div>
+            <p>At RydFixr, your fast & secure fix is our priority. We're dedicated to making every fix fast, safe, and comfortable.</p>
+        </div>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2026 rydFixr services. All rights reserved.
+  </footer>
+
+  <script>
+    const sections = document.querySelectorAll('.section');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('show');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    sections.forEach(section => {
+      observer.observe(section);
+    });
+
+    function toggleMenu() {
+      const nav = document.getElementById('mobileNav');
+      nav.classList.toggle('show-menu');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fixpert Assigned</title>
+
+  <style>
+    body.locked *{
+      pointer-events: none;
+    }
+    /* ✅ Allow cancel button ONLY */
+    body.locked .cancel-btn{
+      pointer-events: auto;
+    }
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #fff;
+      color: #111827;
+    }
+
+    /* 🔝 HEADER */
+    .top-bar {
+      background: #fff;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(18, 18, 18, 0.2);
+    }
+
+    .top-bar img {
+      height: 24px;
+    }
+
+    /* 🔥 STATUS (ATTACHED, NOT CARD) */
+    .status-section {
+      margin-top: 3px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 25px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    #fixpertStatus {
+      font-weight: 600;
+      font-size: 20px;
+      line-height: 24px;
+      color: #4c4d4e;
+    }
+
+    .track-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 12px;
+      color: #2563eb;
+      cursor: pointer;
+      font-weight: 550;
+    }
+
+    .track-btn img {
+      width: 34px;
+      height: 34px;
+      margin-bottom: 4px;
+    }
+
+    /* 🔥 MAIN CARD */
+    .main-card {
+      background: #fff;
+      border-radius: 10px;
+      padding-top: 10px;
+      padding-left: 15px;
+      padding-right: 15px;
+      padding-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    /* OTP */
+    .otp-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .otp-title {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .otp-box {
+      display: flex;
+      gap: 6px;
+    }
+
+    .otp-box span {
+      padding: 6px 10px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .fixpertCard{
+      padding: 20px;
+      background: #f6f7f9;
+      border-radius: 10px;
+      padding-bottom: 30px;
+    }
+    /* FIXPERT */
+    .fixpert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .fixpert-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 6px;
+      color: #4c4d4e;
+    }
+
+    .fixpert-id {
+      margin-top: 15px;
+      background: #c0ddf0;
+      padding: 8px 20px;
+      border-radius: 9px;
+      font-size: 15px;
+      letter-spacing: 3px;
+      color: #1e78a5;
+      font-weight:400;
+      display: inline-block;
+    }
+
+    .call-btn {
+      margin-top: 30px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    /* LOCATION (NO CARD) */
+    .location-section {
+      padding: 18px 16px;
+      background: #fff;
+    }
+
+    .location-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .icon-wrapper {
+      position: relative;
+      width: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .icon {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .blue { background: #2563eb; }
+    .green { background: #10b981; }
+
+    .line {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 45px;
+      border-left: 2px dashed #d1d5db;
+    }
+
+    .label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .blue-text { color: #2563eb; }
+    .green-text { color: #10b981; }
+
+    .location-text {
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    /* CANCEL */
+    .cancel-btn {
+      position: fixed;
+      bottom: 20px;
+      width: 90%;
+      left: 5%;
+      padding: 14px;
+      border-radius: 999px;
+      border: 2px solid #2563eb;
+      background: #2563eb;
+      color: #fff;
+      font-weight: 600;
+    }
+    .cancel-btn:hover{
+      border: 2px solid #ef4444;
+      color:#ef4444;
+      background:#fff;
+    }
+
+    /* PROFILE */
+    .profile-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .profile-img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    /* RATING BADGE */
+    .rating-badge {
+      position: absolute;
+      bottom: -6px;
+      right: -6px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .section-divider {
+      height: 8px;
+      background: #f1f5f9;
+      width: 100%;
+    }
+
+    .dot-loader {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot-loader span {
+      width: 14px;
+      height: 14px;
+      background: #0f52ba;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+
+    .dot-loader span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot-loader span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0.5);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="top-bar">
+    <img src="assets/rydfixr-logo.png" alt="rydFixr_logo"/>
+  </div>
+
+<!-- STATUS -->
+  <div class="status-section">
+    <div id="fixpertStatus"></div>
+
+    <div class="track-btn" onclick="openTracking()">
+      <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" />
+      <span>Track ride</span>
+    </div>
+  </div>
+  <div class="section-divider"></div>
+
+<!-- MAIN CARD -->
+  <div class="main-card">
+
+    <!-- OTP -->
+    <div class="otp-row">
+      <div class="otp-title">Start service with PIN</div>
+      <div class="otp-box" id="otpDisplay"></div>
+    </div>
+
+    <!-- FIXPERT -->
+    <div class="fixpertCard">
+      <div class="fixpert-header">
+        <!-- LEFT -->
+        <div>
+          <div class="fixpert-name" id="fixpertName"></div>
+          <div class="fixpert-id" id="fixpertId"></div>
+        </div>
+        <!-- RIGHT -->
+        <div class="profile-wrapper">
+
+          <img id="fixpertImage" class="profile-img" src="../images/default-user.png" />
+
+          <div id="rating" class="rating-badge"></div>
+
+        </div>
+      </div>
+
+      <button class="call-btn" onclick="callFixpert()">📞 Call Fixpert</button>
+    </div>
+
+  </div>
+  <div class="section-divider"></div>
+
+<!-- LOCATION -->
+  <div class="location-section">
+
+    <div class="location-row">
+      <div class="icon-wrapper">
+        <div class="icon blue"></div>
+        <div class="line"></div>
+      </div>
+      <div>
+        <div class="label blue-text">Your Location</div>
+        <div id="customerLocation" class="location-text"></div>
+      </div>
+    </div>
+
+    <div class="location-row">
+      <div class="icon-wrapper">
+        <div class="icon green"></div>
+      </div>
+      <div>
+        <div class="label green-text">Fixpert</div>
+        <div id="fixpertLocation" class="location-text"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="cancelDiv">
+  <!-- CANCEL -->
+    <button class="cancel-btn" onclick="cancelRide()">Cancel Ride</button>
+  </div>
+
+
+<script src="http://localhost:5001/socket.io/socket.io.js"></script>
+
+<script>
+  const cancelBtn = document.querySelector(".cancel-btn");
+  const socket = io("http://localhost:5001");
+  const assignedAt = localStorage.getItem("assignedAt");
+
+  if (!assignedAt) {
+    console.log("❌ No assigned fixpert → redirect back");
+    showLoaderAndRedirect("searchingFixpert.html");
+  }
+
+  const customerEmail = localStorage.getItem("customerEmail");
+
+  socket.on("connect", () => {
+    console.log("✅ Connected to socket:", socket.id);
+
+    if (customerEmail) {
+      socket.emit("register-customer", customerEmail); // 🔥 THIS WAS MISSING
+      console.log("📡 Customer registered:", customerEmail);
+    } else {
+      console.log("❌ customerEmail not found in localStorage");
+    }
+  });
+
+  // 🔥 ADD EXACTLY HERE
+  /*
+  socket.on("service-started", (data) => {
+    const myEmail = localStorage.getItem("customerEmail")?.toLowerCase().trim();
+
+    console.log("🔥 RECEIVED EVENT:", data, "MY EMAIL:", myEmail);
+
+    // ✅ ONLY REDIRECT CORRECT CUSTOMER
+    if (data.customerEmail === myEmail) {
+      console.log("🚀 Redirecting correct customer");
+
+      showLoaderAndRedirect("customer-dashboard.html");
+    }
+  });
+  */ 
+  socket.on("service-started", (data) => {
+
+    const myEmail = (localStorage.getItem("customerEmail") || "").toLowerCase().trim();
+    const eventEmail = (data.customerEmail || "").toLowerCase().trim();
+
+    console.log("🔥 EVENT EMAIL:", eventEmail);
+    console.log("🔥 MY EMAIL:", myEmail);
+
+    // 🔥 FIX: robust comparison
+    if (eventEmail && myEmail && eventEmail === myEmail) {
+      console.log("🚀 MATCH → REDIRECTING");
+
+      showLoaderAndRedirect("customer-dashboard.html");
+    } else {
+      console.log("❌ NOT MATCHING");
+    }
+
+  });
+
+  // 🔥 WHEN FIXPERT ACCEPTS → START TIMER SYNC
+  /*
+  socket.on("fixpert-accepted", (data) => {
+    console.log("🔥 FIXPERT ACCEPTED:", data);
+
+    // ✅ Save SAME timestamp from backend
+    localStorage.setItem("assignedAt", data.assignedAt);
+
+    // ✅ Store fixpert details (if not already stored)
+    localStorage.setItem("fixpertDetails", JSON.stringify(data.fixpert));
+
+    // 🔁 Reload page to apply lock immediately
+    if (!localStorage.getItem("lockStarted")) {
+      localStorage.setItem("lockStarted", "true");
+      window.location.reload();
+    }
+  });
+  */ 
+  socket.on("fixpert-assigned", (res) => {
+    console.log("🔥 FIXPERT ASSIGNED:", res);
+
+    socketData = res.fixpert;
+    data = socketData;
+
+    localStorage.setItem("assignedAt", res.assignedAt);
+    localStorage.setItem("fixpertDetails", JSON.stringify(res.fixpert));
+
+    document.getElementById("fixpertName").innerText = res.fixpert.name;
+    document.getElementById("fixpertId").innerText = res.fixpert.mechanicId;
+
+    showAddresses(lat, lng, data);
+
+    if (!localStorage.getItem("lockStarted")) {
+      localStorage.setItem("lockStarted", "true");
+      startLock(res.assignedAt);
+    }
+  });
+
+
+  function updateFixpertStatus(fixpertCoords, customerCoords, hasStarted) {
+    if (!fixpertCoords || !customerCoords) return;
+
+    const distance = data.distance || 0;
+
+    let statusText = "";
+
+    if (!hasStarted) {
+      statusText = "🧰 Fixpert is preparing tools...";
+    } else if (distance > 3) {
+      statusText = "🚀 Fixpert started & heading your way";
+    } else if (distance > 0.5) {
+      const eta = Math.round(distance * 3);
+      statusText = `📍 Fixpert arriving in ${eta} mins`;
+    } else {
+      statusText = "⚡ Fixpert arriving soon!";
+    }
+
+    document.getElementById("fixpertStatus").innerText = statusText;
+  }
+
+
+  const LANDMARK_PRIORITY = [
+    // 🟢 HIGH
+    "hospital", "fuel", "bus_station", "bus_stop",
+    "train_station", "bank", "atm", "police", "post_office",
+
+    // 🟡 MEDIUM
+    "school", "university", "restaurant", "cafe", "mall",
+    "supermarket", "hotel", "place_of_worship",
+
+    // 🔵 LOW
+    "park", "stadium", "theatre", "library"
+  ];
+
+  async function getNearbyLandmark(lat, lng, area) {
+    try {
+      const radius = 100; // meters
+
+      const query = `
+        [out:json];
+        (
+          node(around:${radius},${lat},${lng})["amenity"];
+          node(around:${radius},${lat},${lng})["shop"];
+          node(around:${radius},${lat},${lng})["tourism"];
+        );
+        out;
+      `;
+
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query
+      });
+
+      const data = await res.json();
+
+      if (!data.elements || data.elements.length === 0) return null;
+
+      // 🔥 FIND NEAREST
+      let nearest = null;
+      let minDist = Infinity;
+
+      for (let el of data.elements) {
+        // ❌ SKIP place nodes (village/town)
+        if (el.tags.place) continue;
+
+        if (el.tags.place || el.tags.boundary) continue;
+
+        // ❌ SKIP if same as area (dynamic)
+        if (
+          area &&
+          el.tags.name.toLowerCase() === area.toLowerCase()
+        ) {
+          continue;
+        }
+
+        function calcDist(a, b, c, d) {
+          const R = 6371;
+          const dLat = (c - a) * Math.PI / 180;
+          const dLon = (d - b) * Math.PI / 180;
+
+          const x =
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(a * Math.PI/180) *
+            Math.cos(c * Math.PI/180) *
+            Math.sin(dLon/2) *
+            Math.sin(dLon/2);
+
+          return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+        }
+
+        const d = calcDist(lat, lng, el.lat, el.lon);
+
+        if (d < minDist) {
+          minDist = d;
+          nearest = el.tags.name;
+        }
+      }
+
+      return nearest;
+
+    } catch (err) {
+      console.log("Overpass error:", err);
+      return null;
+    }
+  }
+
+  // 🔥 CONVERT COORDINATES → LANDMARK ADDRESS
+  async function getSmartAddress(lat, lng, fixpertCoords, customerCoords) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&extratags=1&accept-language=en`,
+        {
+          headers: { "User-Agent": "RideFixrApp/1.0" }
+        }
+      );
+
+      const data = await res.json();
+      const addr = data.address || {};
+      const area =
+        addr.town ||
+        addr.village ||
+        addr.city;
+
+      // 🔥 CALL OVERPASS
+      const landmark = await getNearbyLandmark(lat, lng, area);
+      const displayName = data.display_name || "";
+
+      // 🔥 LANDMARK LIST
+      const possible = [
+        { type: "hospital", name: addr.hospital },
+        { type: "fuel", name: addr.fuel },
+        { type: "bus_station", name: addr.bus_station },
+        { type: "bus_stop", name: addr.bus_stop },
+        { type: "train_station", name: addr.train_station },
+        { type: "bank", name: addr.bank },
+        { type: "atm", name: addr.atm },
+        { type: "police", name: addr.police },
+        { type: "post_office", name: addr.post_office },
+
+        { type: "school", name: addr.school },
+        { type: "university", name: addr.university },
+        { type: "restaurant", name: addr.restaurant },
+        { type: "cafe", name: addr.cafe },
+        { type: "mall", name: addr.mall },
+        { type: "supermarket", name: addr.supermarket },
+        { type: "hotel", name: addr.hotel },
+        { type: "place_of_worship", name: addr.place_of_worship },
+
+        { type: "park", name: addr.park },
+        { type: "stadium", name: addr.stadium },
+        { type: "theatre", name: addr.theatre },
+        { type: "library", name: addr.library }
+      ];
+
+      // 🔥 FILTER VALID
+      const valid = possible.filter(p => p.name);
+
+      // 🔥 LOCATION PARTS
+      let road =
+        addr.neighbourhood ||
+        addr.suburb ||
+        addr.hamlet;
+
+      // ❌ REMOVE BAD ROADS (MDR, codes)
+      if (road && (road.includes("MDR") || road.match(/^[A-Z0-9]+$/)|| road.includes("Road") || road.includes("Highway"))) {
+        road = null;
+      }
+
+      // ✅ PRIORITY 1 → OVERPASS (MOST ACCURATE)
+      // ✅ CLEAN OVERPASS LOGIC
+      if (landmark) {
+
+        let parts = [];
+
+        // ❌ SKIP IF SAME AS AREA
+        if (!area || landmark.toLowerCase() !== area.toLowerCase()) {
+          parts.push(landmark);
+        }
+
+        if (road) parts.push(road);
+        if (area) parts.push(area);
+
+        return `📍 Near ${parts.join(", ")}`;
+      }
+
+      // ✅ 2. NOMINATIM LANDMARK
+      for (let type of LANDMARK_PRIORITY) {
+        const found = valid.find(v => v.type === type);
+
+        if (found) {
+          if (road && found.name && road.toLowerCase().includes(found.name.toLowerCase())) {
+            road = null;
+          }
+
+          let locationParts = [];
+          if (road) locationParts.push(road);
+          if (area) locationParts.push(area);
+
+          const locationText = locationParts.join(", ");
+
+          let parts = [];
+
+          if (!area || found.name.toLowerCase() !== area.toLowerCase()) {
+            parts.push(found.name);
+          }
+
+          if (road) parts.push(road);
+          if (area) parts.push(area);
+
+          return `📍 Near ${parts.join(", ")}`;
+        }
+      }
+
+      // ✅ 3. DISPLAY NAME (SMART EXTRACTION)
+      if (displayName) {
+        const parts = displayName.split(",").map(p => p.trim());
+
+        for (let part of parts.slice(0, 3)) {
+          if (
+            part &&
+            !part.match(/^\d+$/) &&
+            !part.includes("Road") &&
+            !part.includes("Street") &&
+            !part.includes("MDR") &&
+            part.length > 3
+          ) {
+            let parts = [];
+
+            if (!area || part.toLowerCase() !== area.toLowerCase()) {
+              parts.push(part);
+            }
+
+            if (road) parts.push(road);
+            if (area) parts.push(area);
+
+            return `📍 Near ${parts.join(", ")}`;
+          }
+        }
+      }
+
+      // ✅ 4. STREET
+      if (road) {
+        return `📍 Near ${road}${area ? ", " + area : ""}`;
+      }
+
+      // ✅ 5. AREA
+      if (area) {
+        return `📍 Near ${area}`;
+      }
+
+      // LAST
+      return "📍 Location nearby";
+
+    } catch (err) {
+      return "Location unavailable";
+    }
+  }
+
+  async function loadDistanceAndUpdateUI() {
+    try {
+      const res = await fetch("http://localhost:5000/api/customer/fixpert-location", {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token")
+        }
+      });
+
+      const result = await res.json();
+
+      console.log("🔥 DISTANCE FROM API:", result.distance);
+
+      let distance = result.distance;
+
+      // fallback if ORS fails
+      if (!distance) {
+        distance = fallbackDistance(
+          lat,
+          lng,
+          data.location.lat,
+          data.location.lng
+        );
+      }
+
+      showAddresses(lat, lng, {
+        ...data,
+        distance
+      });
+
+    } catch (err) {
+      console.log("❌ Distance fetch error:", err);
+    }
+  }
+
+  function fallbackDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI/180) *
+      Math.cos(lat2 * Math.PI/180) *
+      Math.sin(dLon/2) *
+      Math.sin(dLon/2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
+  }
+
+
+  async function showAddresses(lat, lng, data) {
+    const customerCoords = { lat, lng };
+    /*const fixpertCoords = {
+      lat: data.location.lat,
+      lng: data.location.lng
+    };
+    */
+    console.log("📍 LAT LNG:", lat, lng);
+    console.log("📍 FIXPERT LOC:", data.location); 
+    const fixpertCoords = {
+      lat: data?.location?.lat,
+      lng: data?.location?.lng
+    };
+
+    if (
+      !fixpertCoords.lat ||
+      !fixpertCoords.lng ||
+      fixpertCoords.lat === 0 ||
+      fixpertCoords.lng === 0
+    ) {
+      console.log("❌ Fixpert location missing", data);
+      return;
+    }
+
+    // 🔥 GET SMART ADDRESSES
+    const customerAddr = await getSmartAddress(
+      lat, lng, fixpertCoords, customerCoords
+    );
+
+    const fixpertAddr = await getSmartAddress(
+      data.location.lat,
+      data.location.lng,
+      fixpertCoords,
+      customerCoords
+    );
+
+
+    document.getElementById("customerLocation").innerText = customerAddr;
+
+    const request = JSON.parse(localStorage.getItem("fixpertRequest"));
+    const distance = request?.distance;
+
+    let distanceText = "";
+
+    if (distance) {
+      if (distance < 1) {
+        // 🔥 convert to meters
+        const meters = Math.round(distance * 1000);
+        if(meters<1000){
+          distanceText = ` (${meters} m away)`;
+        }
+        else {
+          distanceText = ` (${(meters / 1000).toFixed(1)} km away)`;
+        }
+      } else {
+        distanceText = ` (${Number(distance).toFixed(1)} km away)`;
+      }
+    }
+    console.log("🔥 DISTANCE RECEIVED:", data.distance);
+
+    document.getElementById("fixpertLocation").innerText =
+      fixpertAddr + distanceText;
+  }
+
+
+  socket.on("cancel-denied", (data) => {
+    alert(data.message);
+  });
+
+  socket.on("cancel-success", () => {
+    alert("Request cancelled successfully");
+    showLoaderAndRedirect("customer-dashboard.html");
+  });
+
+  let socketData = null;
+  let data = JSON.parse(localStorage.getItem("fixpertDetails") || "null");
+
+  if (!data) {
+    console.log("⏳ Waiting for fixpert...");
+  }
+  let request = JSON.parse(localStorage.getItem("fixpertRequest"));
+  const distance = request?.distance;
+  console.log("🔥 DISTANCE FROM REQUEST:", distance);
+
+  if (!request || !request.location || !request.location.lat || !request.location.lng) {
+    alert("Invalid request → redirecting");
+    showLoaderAndRedirect("customer-dashboard.html");
+  }
+
+  // 🔥 TEST MODE (if no data)
+  if (!request) {
+    alert("Invalid request -> Redirecting...");
+    showLoaderAndRedirect("customer-dashboard.html");
+  }
+  // ✅ ALWAYS SET NEW LOCK WHEN PAGE OPENS FIRST TIME
+
+  // ✅ OTP generate only once
+  let otp = localStorage.getItem("rideOTP");
+
+  if (!otp) {
+    otp = Math.floor(1000 + Math.random() * 9000);
+    localStorage.setItem("rideOTP", otp);
+  }
+
+  // DISPLAY OTP
+  const otpContainer = document.getElementById("otpDisplay");
+  otp.toString().split("").forEach(d => {
+    const span = document.createElement("span");
+    span.innerText = d;
+    otpContainer.appendChild(span);
+  });
+
+  // FIXPERT DETAILS
+  document.getElementById("fixpertName").innerText = data.name || "Fixpert";
+
+  // 🔥 PROFILE IMAGE (SAFE ADD)
+  const imgEl = document.getElementById("fixpertImage");
+
+  if (data.profilePic) {
+    imgEl.src = data.profilePic;
+  } else {
+    imgEl.src = "../images/default-user.png";
+  }
+
+  // 🔥 RATING UI IMPROVEMENT
+  const ratingEl = document.getElementById("rating");
+  if (data.completedServices >= 3) {
+    ratingEl.innerText = `⭐ ${data.rating || 4.5}`;
+  } else {
+    ratingEl.style.display = "none";
+  }
+
+  document.getElementById("fixpertId").innerText = data.mechanicId || "RF000000";
+
+  console.log("📦 FIXPERT DATA:", data);
+  console.log("📦 REQUEST DATA:", request);
+
+  // LOCATIONS
+  const lat =
+    request?.location?.lat ||
+    request?.latitude ||
+    data?.customerLocation?.lat ||
+    data?.customerLocation?.latitude;
+
+  const lng =
+    request?.location?.lng ||
+    request?.longitude ||
+    data?.customerLocation?.lng ||
+    data?.customerLocation?.longitude;
+
+  if (!lat || !lng) {
+    alert("Invalid location data");
+    showLoaderAndRedirect("customer-dashboard.html");
+  }
+  console.log("FixpertFound Location:", lat, lng);
+  /*document.getElementById("customerLocation").innerText =
+  `${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}`;
+
+  document.getElementById("fixpertLocation").innerText =
+  `${data.location.lat}, ${data.location.lng}`; */
+
+  // 🔥 SHOW HUMAN FRIENDLY LOCATION
+  //loadDistanceAndUpdateUI();
+  //setInterval(loadDistanceAndUpdateUI, 5000);
+
+  showAddresses(lat, lng, data); // 🔥 DIRECT CALL
+
+  const customerCoords = { lat, lng };
+  const fixpertCoords = {
+    lat: data.location.lat,
+    lng: data.location.lng
+  };
+  // initial state (not started yet)
+  if (localStorage.getItem("lockCompleted") === "true") {
+    updateFixpertStatus(fixpertCoords, customerCoords, false);
+  }
+
+  socket.on("fixpert-location-update", (live) => {
+    if (localStorage.getItem("lockCompleted") === "true") {
+      updateFixpertStatus(live.fixpertCoords, customerCoords, true);
+    }
+  });
+
+  // CALL FUNCTION
+  function callFixpert() {
+    window.location.href = `tel:${data.phone}`;
+  }
+
+  // TRACK BUTTON
+  function openTracking() {
+    showLoaderAndRedirect("tracking.html");
+  }
+
+  // CANCEL
+  function cancelRide() {
+    const assignedAtRaw = localStorage.getItem("assignedAt");
+
+    if (!assignedAtRaw) {
+      alert("Invalid session ❌");
+      return;
+    }
+
+    const assignedAt = parseInt(assignedAtRaw);
+    const now = Date.now();
+
+    if (isNaN(assignedAt) || now - assignedAt > 30000) {
+      alert("Cancel time expired ❌");
+      return;
+    }
+    // ✅ Emit cancel to backend
+    socket.emit("cancel-fixpert", {
+      customerEmail: localStorage.getItem("customerEmail")
+    });
+
+    // ✅ Clear ONLY ride-related data (NOT full localStorage)
+    localStorage.removeItem("lockStarted");
+    localStorage.removeItem("fixpertRequest");
+    localStorage.removeItem("fixpertDetails");
+    localStorage.removeItem("assignedAt");
+    localStorage.removeItem("lockCompleted");
+    localStorage.removeItem("rideStatus");
+    localStorage.removeItem("rideOTP");
+
+    alert("Request cancelled successfully");
+
+    showLoaderAndRedirect("customer-dashboard.html");
+  }
+
+  // 🔥 SEND OTP TO FIXPERT
+  socket.emit("send-otp", {
+    otp,
+    fixpertId: data.mechanicId,
+    customerEmail: localStorage.getItem("customerEmail")
+  });
+
+
+
+  function startLock(assignedAt) {
+    const lockCard = document.getElementById("lockCard");
+    const timerEl = document.getElementById("lockTimer");
+    const cancelBtn = document.querySelector(".cancel-btn");
+
+    console.log("LOCK STARTED");
+
+    if (!assignedAt) return; // safety
+
+    const now = Date.now();
+    let remaining = 30000 - (now - assignedAt);
+
+    if (remaining <= 0) {
+      localStorage.setItem("lockCompleted", "true");
+      localStorage.setItem("rideStatus", "ACTIVE");
+      unlockUI();
+      return;
+    }
+    
+    document.body.classList.add("locked");
+    // ✅ Enable cancel during lock
+    cancelBtn.disabled = false;
+    cancelBtn.style.pointerEvents = "auto";
+    cancelBtn.style.opacity = "1";
+    cancelBtn.innerText = "Cancel Ride";
+    document.getElementById("fixpertStatus").innerText = "";
+    lockCard.style.display = "block";
+    lockCard.style.backdropFilter = "blur(6px)";
+
+    /*let seconds = Math.ceil(remaining / 1000);
+    console.log("AssignedAt:", assignedAt);
+    console.log("Now:", now);
+    console.log("Remaining:", remaining);
+
+    timerEl.innerText = seconds;
+
+    const interval = setInterval(() => {
+      seconds--;
+      timerEl.innerText = seconds;
+
+      if (seconds <= 0) {
+        clearInterval(interval);
+
+        // 🔥 MARK LOCK COMPLETED
+        localStorage.setItem("lockCompleted", "true");
+        localStorage.setItem("rideStatus", "ACTIVE");
+
+        unlockUI();
+        const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+        audio.play();
+
+        cancelBtn.disabled = true;
+        cancelBtn.style.pointerEvents = "none";
+        cancelBtn.style.opacity = "0.5";
+        cancelBtn.innerText = "Cancel Disabled";
+      }
+    }, 1000);
+    */ 
+
+    function updateTimer() {
+
+      const now = Date.now();
+      const remaining = 30000 - (now - assignedAt);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+
+        localStorage.setItem("lockCompleted", "true");
+        localStorage.setItem("rideStatus", "ACTIVE");
+
+        unlockUI();
+
+        const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+        audio.play().catch(() => {});
+
+        cancelBtn.disabled = true;
+        cancelBtn.style.pointerEvents = "none";
+        cancelBtn.style.opacity = "0.5";
+        cancelBtn.innerText = "Cancel Disabled";
+
+        return;
+      }
+
+      const seconds = Math.ceil(remaining / 1000);
+      timerEl.innerText = seconds;
+    }
+    updateTimer(); // run immediately
+    const interval = setInterval(updateTimer, 1000);
+  }
+  
+
+  window.onload = () => {
+    let rideStatus = localStorage.getItem("rideStatus");
+
+    // 🔥 NEW ENTRY → SET LOCKED
+    if (!rideStatus) {
+      localStorage.setItem("rideStatus", "LOCKED");
+      rideStatus = "LOCKED";
+    }
+
+    const lockCompleted = localStorage.getItem("lockCompleted");
+
+    // 🔥 IF ALREADY COMPLETED → DO NOT LOCK AGAIN
+    if (lockCompleted === "true") {
+      unlockUI();
+
+      // 🔥 FORCE DISABLE CANCEL AFTER REFRESH
+      const cancelBtn = document.querySelector(".cancel-btn");
+
+      cancelBtn.disabled = true;
+      cancelBtn.style.pointerEvents = "none";
+      cancelBtn.style.opacity = "0.5";
+      cancelBtn.innerText = "Cancel Disabled";
+
+      return;
+    }
+
+    let assignedTime = localStorage.getItem("assignedAt");
+
+    if (!assignedTime) {
+      console.log("⏳ Waiting for socket event...");
+      return; // ❌ DO NOT start lock
+    }
+    assignedTime = parseInt(assignedTime); // ✅ correct
+    startLock(assignedTime);
+    // 🔥 VERY IMPORTANT (after setting state)
+  };
+  
+
+  function unlockUI() {
+    document.body.classList.remove("locked");
+
+    const lockCard = document.getElementById("lockCard");
+    if (lockCard) lockCard.style.display = "none";
+
+    // 🔥 Update status instead of hardcoding UI
+    localStorage.setItem("rideStatus", "ACTIVE");
+
+    const fixpertCoords = {
+      lat: data.location.lat,
+      lng: data.location.lng
+    };
+
+    const customerCoords = { lat, lng };
+
+    if (localStorage.getItem("lockCompleted") === "true") {
+      updateFixpertStatus(fixpertCoords, customerCoords, false);
+    }
+    const cancelBtn = document.querySelector(".cancel-btn");
+    cancelBtn.disabled = true;
+    cancelBtn.style.pointerEvents = "none";
+    cancelBtn.style.opacity = "0.5";
+    cancelBtn.innerText = "Cancel Disabled";
+    localStorage.removeItem("lockStarted");
+  }
+
+  function showLoaderAndRedirect(url) {
+    const loader = document.getElementById("pageLoader");
+
+    if (loader) {
+      loader.style.display = "flex";
+    }
+
+    setTimeout(() => {
+      window.location.href = url;
+    }, 1200);
+  }
+
+</script>
+
+  <div id="lockCard" style="
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    padding: 20px 30px;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    text-align: center;
+    font-weight: bold;
+    z-index: 9999;
+    display: none;
+  ">
+    🔄 Connecting to Fixpert... <br><br>
+    <span id="lockTimer" style="color:#0f52ba;font-size:20px;">30</span> sec
+  </div>
+
+  <div id="pageLoader" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+  ">
+
+    <div class="dot-loader">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+  </div>
+
+</body>
+</html>
